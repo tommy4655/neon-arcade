@@ -3,11 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>N.E.O.N. ORBITAL ENGINE v3.2</title>
+    <title>N.E.O.N. ORBITAL ENGINE v3.2 PREMIUM</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #010307; font-family: monospace; }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            user-select: none; 
+            -webkit-user-select: none; 
+            touch-action: none;
+        }
+        body, html { 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background: #010307; 
+            font-family: 'Courier New', Courier, monospace; 
+        }
+        canvas { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 1; 
+        }
         
         /* HUD Superior */
         .hud-top {
@@ -21,12 +41,12 @@
             pointer-events: none;
         }
 
-        /* HUD Inferior Seguro (Separado para evitar solapamiento) */
+        /* HUD Inferior */
         .hud-footer {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
+            bottom: 25px;
+            left: 25px;
+            right: 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -37,30 +57,41 @@
             text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
             pointer-events: none;
             z-index: 10;
-            border-top: 1px solid rgba(0, 229, 255, 0.1);
-            padding-top: 10px;
+            border-top: 1px solid rgba(0, 229, 255, 0.15);
+            padding-top: 12px;
+        }
+        .hud-status { 
+            color: #bd00ff; 
+            text-shadow: 0 0 8px rgba(189, 0, 255, 0.6); 
         }
 
-        .hud-status { color: #bd00ff; text-shadow: 0 0 8px rgba(189, 0, 255, 0.6); }
-
-        /* Cuadros de datos tácticos flotantes de la imagen */
+        /* Tarjetas de telemetría flotantes idénticas al render */
         .planet-card {
             position: absolute;
-            background: rgba(2, 8, 18, 0.85);
-            border: 1px solid rgba(0, 229, 255, 0.3);
+            background: rgba(2, 6, 14, 0.85);
+            border: 1px solid rgba(0, 229, 255, 0.4);
             border-left: 3px solid #00e5ff;
             padding: 6px 10px;
-            border-radius: 2px;
             color: #ffffff;
             font-size: 9px;
             pointer-events: none;
             z-index: 5;
             transform: translate(15px, -50%);
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-            line-height: 1.3;
-            display: none; /* Se activa dinámicamente */
+            box-shadow: 0 0 15px rgba(0,0,0,0.6);
+            line-height: 1.4;
+            white-space: nowrap;
         }
-        .planet-card span { color: #00e5ff; font-weight: bold; }
+        .planet-card b { 
+            color: #ffffff; 
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 2px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 2px;
+        }
+        .planet-card span { 
+            color: #00e5ff; 
+        }
     </style>
 </head>
 <body>
@@ -88,146 +119,157 @@
             w = canvas.width = window.innerWidth;
             h = canvas.height = window.innerHeight;
             cX = w / 2; cY = h / 2;
-            generarEstrellas();
+            generarPolvoEstelar();
         }
 
-        function generarEstrellas() {
+        function generarPolvoEstelar() {
             stars = [];
-            for(let i=0; i<120; i++) {
-                stars.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.2, alpha: Math.random()*0.8+0.2 });
+            for(let i=0; i<150; i++) {
+                stars.push({ 
+                    x: Math.random() * w, 
+                    y: Math.random() * h, 
+                    r: Math.random() * 1.3, 
+                    alpha: Math.random() * 0.7 + 0.3 
+                });
             }
         }
         window.addEventListener('resize', resize);
         resize();
 
-        // Estructura de Planetas con telemetría real integrada de la imagen
+        // Configuración matemática de los cuerpos celestes con excentricidad elíptica (ecc)
         const planets = [
-            { id: "venus", name: "Venus", dist: 100, size: 6, speed: 0.022, angle: 0, color: '#ffb366', coreColor: '#b35900', ecc: 0.9, data: "Dist: 0.72 AU<br>Vel: 35.0 km/s" },
-            { id: "earth", name: "Earth", dist: 160, size: 8, speed: 0.015, angle: 2.1, color: '#66ccff', coreColor: '#0059b3', ecc: 0.85, data: "Dist: 1.00 AU<br>Vel: 29.8 km/s" },
-            { id: "mars", name: "Mars", dist: 220, size: 5, speed: 0.011, angle: 4.3, color: '#ff6666', coreColor: '#b30000', ecc: 0.93, data: "Dist: 1.52 AU<br>Vel: 24.0 km/s" },
-            { id: "jupiter", name: "Saturn", dist: 310, size: 15, speed: 0.007, angle: 1.2, color: '#ffe6b3', coreColor: '#997326', ecc: 0.82, hasRing: true, data: "Dist: 9.58 AU<br>Vel: 9.7 km/s" }
+            { id: "venus", name: "Venus", dist: 95, size: 5, speed: 0.024, angle: 0, color: '#ffb366', coreColor: '#b35900', ecc: 0.88, data: "Dist: 0.72 AU<br>Vel: 35.0 km/s" },
+            { id: "earth", name: "Earth", dist: 145, size: 7.5, speed: 0.017, angle: 2.1, color: '#66ccff', coreColor: '#0059b3', ecc: 0.86, data: "Dist: 1.00 AU<br>Vel: 29.8 km/s" },
+            { id: "mars", name: "Mars", dist: 205, size: 5.5, speed: 0.013, angle: 4.3, color: '#ff6666', coreColor: '#b30000', ecc: 0.90, data: "Dist: 1.52 AU<br>Vel: 24.0 km/s" },
+            { id: "saturn", name: "Saturn", dist: 285, size: 13, speed: 0.008, angle: 1.2, color: '#ffe6b3', coreColor: '#997326', ecc: 0.83, hasRing: true, data: "Dist: 9.58 AU<br>Vel: 9.7 km/s" }
         ];
 
-        // Crear tarjetas DOM flotantes para la interfaz
+        // Inyección dinámica de las tarjetas de datos al DOM
         planets.forEach(p => {
             const card = document.createElement('div');
             card.id = `card-${p.id}`;
             card.className = 'planet-card';
-            card.innerHTML = `<b>${p.name.toUpperCase()}</b><br>${p.data}`;
+            card.innerHTML = `<b>${p.name.toUpperCase()}</b>${p.data}`;
             uiContainer.appendChild(card);
         });
 
         function renderEngine() {
-            // Fondo Base del Espacio Profundo
-            ctx.fillStyle = '#010409';
+            // Fondo hiper-oscuro
+            ctx.fillStyle = '#010408';
             ctx.fillRect(0, 0, w, h);
 
-            // 1. Dibujar el Mapa de Estrellas de Fondo (Polvo Cósmico de la imagen)
+            // 1. Renderizar Polvo Estelar Centelleante
             ctx.fillStyle = '#ffffff';
             stars.forEach(s => {
-                ctx.globalAlpha = s.alpha * (0.7 + Math.sin(Date.now()*0.002 + s.x)*0.3);
-                ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+                ctx.globalAlpha = s.alpha * (0.6 + Math.sin(Date.now() * 0.0015 + s.x) * 0.4);
+                ctx.beginPath(); 
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); 
+                ctx.fill();
             });
             ctx.globalAlpha = 1.0;
 
-            // 2. Dibujar las Rejillas de Perspectiva Vectorial (Líneas Azules de Fondo)
-            ctx.strokeStyle = 'rgba(0, 229, 255, 0.03)';
+            // 2. Renderizar Rejilla de Vectores Tácticos (Líneas Azules)
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.025)';
             ctx.lineWidth = 1;
-            for(let i = 0; i < w; i += 50) {
+            for(let i = 0; i < w; i += 60) {
                 ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
             }
-            // Líneas radiales de deformación de gravedad
-            ctx.strokeStyle = 'rgba(189, 0, 255, 0.04)';
-            for(let r = 80; r < Math.max(w,h); r += 70) {
-                ctx.beginPath(); ctx.arc(cX, cY, r, 0, Math.PI*2); ctx.stroke();
+            // Líneas de curvatura orbital concéntrica de fondo
+            ctx.strokeStyle = 'rgba(189, 0, 255, 0.03)';
+            for(let r = 70; r < Math.max(w, h); r += 65) {
+                ctx.beginPath(); ctx.arc(cX, cY, r, 0, Math.PI * 2); ctx.stroke();
             }
 
-            // 3. Renderizar el Sol con Modos de Fusión Lumínicos (Glow Hiper-Realista)
+            // 3. Renderizar Núcleo Solar Avanzado con Mezcla Lumínica (Glow)
             let time = Date.now();
-            let solPulse = Math.sin(time * 0.005) * 2;
+            let solPulse = Math.sin(time * 0.004) * 2.5;
             
             ctx.save();
-            ctx.globalCompositeOperation = 'screen'; // Mezcla de color para brillo real
+            ctx.globalCompositeOperation = 'screen'; // Fusión aditiva para brillo real
             
-            // Corona exterior expansiva
-            let glowGrad = ctx.createRadialGradient(cX, cY, 10, cX, cY, 75 + solPulse);
-            glowGrad.addColorStop(0, 'rgba(255, 215, 0, 1)');
-            glowGrad.addColorStop(0.3, 'rgba(255, 102, 0, 0.6)');
-            glowGrad.addColorStop(0.6, 'rgba(255, 34, 0, 0.2)');
+            // Capa térmica exterior expansiva
+            let glowGrad = ctx.createRadialGradient(cX, cY, 8, cX, cY, 68 + solPulse);
+            glowGrad.addColorStop(0, 'rgba(255, 220, 0, 1)');
+            glowGrad.addColorStop(0.25, 'rgba(255, 95, 0, 0.65)');
+            glowGrad.addColorStop(0.6, 'rgba(230, 25, 0, 0.25)');
             glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = glowGrad;
-            ctx.beginPath(); ctx.arc(cX, cY, 80 + solPulse, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); 
+            ctx.arc(cX, cY, 75 + solPulse, 0, Math.PI * 2); 
+            ctx.fill();
 
-            // Núcleo Sólido Brillante del Sol
-            let sunGrad = ctx.createRadialGradient(cX, cY, 0, cX, cY, 40);
+            // Esfera central densa del Sol
+            let sunGrad = ctx.createRadialGradient(cX, cY, 0, cX, cY, 36);
             sunGrad.addColorStop(0, '#ffffff');
-            sunGrad.addColorStop(0.6, '#ffcc00');
+            sunGrad.addColorStop(0.5, '#ffcc00');
             sunGrad.addColorStop(1, '#ff3300');
             ctx.fillStyle = sunGrad;
-            ctx.beginPath(); ctx.arc(cX, cY, 42, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); 
+            ctx.arc(cX, cY, 38, 0, Math.PI * 2); 
+            ctx.fill();
             
-            // Rayos vectoriales de la estrella central
-            ctx.strokeStyle = 'rgba(255, 100, 0, 0.15)';
+            // Rayos vectoriales oscilantes (Llamaradas de plasma controladas)
+            ctx.strokeStyle = 'rgba(255, 95, 0, 0.18)';
             ctx.lineWidth = 1.5;
-            for(let a=0; a<Math.PI*2; a+=Math.PI/4) {
-                let l = 65 + Math.sin(time*0.003 + a)*8;
-                ctx.beginPath(); ctx.moveTo(cX, cY);
-                ctx.lineTo(cX + Math.cos(a)*l, cY + Math.sin(a)*l);
+            for(let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+                let length = 58 + Math.sin(time * 0.003 + a) * 6;
+                ctx.beginPath(); 
+                ctx.moveTo(cX, cY);
+                ctx.lineTo(cX + Math.cos(a) * length, cY + Math.sin(a) * length);
                 ctx.stroke();
             }
             ctx.restore();
 
-            // 4. Renderizar Órbitas Elípticas y Planetas en 3D
+            // 4. Renderizar Órbitas Elípticas y Esferas 3D de los Planetas
             planets.forEach(p => {
                 p.angle += p.speed;
                 
-                // Ecuación de la elipse inclinada de la imagen original
+                // Coordenadas calculadas bajo la elipse del plano orbital inclinado
                 let px = cX + Math.cos(p.angle) * p.dist;
                 let py = cY + Math.sin(p.angle) * p.dist * p.ecc;
 
-                // Dibujar Línea de órbita elíptica estilizada (Cyan neón limpio)
-                ctx.strokeStyle = 'rgba(0, 229, 255, 0.25)';
-                ctx.lineWidth = 1.2;
+                // Trazado de órbita cian de alta definición
+                ctx.strokeStyle = 'rgba(0, 229, 255, 0.22)';
+                ctx.lineWidth = 1.1;
                 ctx.save();
                 ctx.translate(cX, cY);
                 ctx.scale(1, p.ecc);
                 ctx.beginPath();
-                ctx.arc(0, 0, p.dist, 0, Math.PI*2);
+                ctx.arc(0, 0, p.dist, 0, Math.PI * 2);
                 ctx.stroke();
                 ctx.restore();
 
-                // Esferas Planetarias con Sombreador de Esfericidad (3D Radial Gradient)
-                // Esto hace que la sombra apunte siempre en contra del Sol automáticamente
+                // Proyección de Sombra 3D (Gradiente radial inverso a la posición del Sol)
                 let angToSun = Math.atan2(py - cY, px - cX);
-                let shadowX = px + Math.cos(angToSun + Math.PI) * (p.size * 0.3);
-                let shadowY = py + Math.sin(angToSun + Math.PI) * (p.size * 0.3);
+                let shadowX = px + Math.cos(angToSun + Math.PI) * (p.size * 0.35);
+                let shadowY = py + Math.sin(angToSun + Math.PI) * (p.size * 0.35);
 
                 let pGrad = ctx.createRadialGradient(shadowX, shadowY, 1, px, py, p.size);
                 pGrad.addColorStop(0, p.color);
-                pGrad.addColorStop(0.8, p.coreColor);
-                pGrad.addColorStop(1, '#02060c');
+                pGrad.addColorStop(0.75, p.coreColor);
+                pGrad.addColorStop(1, '#02050a');
 
                 ctx.save();
                 ctx.fillStyle = pGrad;
-                ctx.shadowBlur = 8;
+                ctx.shadowBlur = 6;
                 ctx.shadowColor = p.color;
-                ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); 
+                ctx.arc(px, py, p.size, 0, Math.PI * 2); 
+                ctx.fill();
 
-                // Anillo de Saturno alineado en perspectiva elíptica
+                // Anillo de Saturno con inclinación matemática calculada
                 if(p.hasRing) {
-                    ctx.strokeStyle = 'rgba(235, 195, 120, 0.5)';
-                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = 'rgba(235, 195, 120, 0.45)';
+                    ctx.lineWidth = 2.5;
                     ctx.beginPath();
-                    ctx.ellipse(px, py, p.size * 1.8, p.size * 0.4, -0.15, 0, Math.PI*2);
+                    ctx.ellipse(px, py, p.size * 1.7, p.size * 0.38, -0.12, 0, Math.PI * 2);
                     ctx.stroke();
                 }
                 ctx.restore();
 
-                // 5. Posicionamiento en tiempo real de las Tarjetas de Telemetría DOM
+                // 5. Vincular y mover las cajas DOM en tiempo real sobre la pantalla
                 const card = document.getElementById(`card-${p.id}`);
                 if (card) {
-                    // Mostrar solo si el planeta está en el cuadrante derecho/visible para no saturar
-                    card.style.display = 'block';
                     card.style.left = `${px}px`;
                     card.style.top = `${py}px`;
                 }
@@ -236,6 +278,7 @@
             requestAnimationFrame(renderEngine);
         }
 
+        // Ejecutar el ciclo de renderizado
         renderEngine();
     </script>
 </body>
