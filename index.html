@@ -3,68 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CINE_CODE: Regalo para Mamá</title>
+    <title>Cine Code - Edición Premium</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
-        body, html { width: 100%; height: 100%; background: #020504; font-family: sans-serif; }
+        body, html { width: 100%; height: 100%; background: #050a08; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         
-        /* Subtítulos de la película (Frases de la trama) */
-        .subtitulos-cine {
+        /* Subtítulos estilo cine moderno */
+        .subtitulos-hud {
             position: absolute;
-            bottom: 12%;
+            bottom: 10%;
             left: 50%;
             transform: translateX(-50%);
-            color: #ffffff;
+            color: #e2e8f0;
             font-size: 14px;
-            font-weight: 500;
-            letter-spacing: 1px;
+            font-weight: 400;
             text-align: center;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.9);
             z-index: 5;
-            width: 80%;
+            width: 85%;
+            max-width: 500px;
             opacity: 0;
-            transition: opacity 1s ease;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            line-height: 1.6;
         }
-        .subtitulos-cine span {
-            color: #2aff96;
+        .subtitulos-hud span {
+            color: #51bda2;
             font-family: monospace;
-            font-size: 10px;
+            font-size: 9px;
             display: block;
-            margin-bottom: 5px;
-            letter-spacing: 3px;
+            margin-bottom: 4px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
-    <div id="subtitulos" class="subtitulos-cine"><span>ESCENA_03 // AUDIO_LOG</span>TE AMO MAMÁ</div>
-    <canvas id="cinemaCanvas"></canvas>
+    <div id="subText" class="subtitulos-hud"><span>Escena 01 // Transmisión</span>"Cargando secuencia..."</div>
+    <canvas id="movieCanvas"></canvas>
 
     <script>
-        const canvas = document.getElementById('cinemaCanvas');
+        const canvas = document.getElementById('movieCanvas');
         const ctx = canvas.getContext('2d');
-        const subtitulos = document.getElementById('subtitulos');
+        const subText = document.getElementById('subText');
 
         let w, h, cX, cY;
-        let fragmentos = [];
         let lluvia = [];
-        let humo = [];
-        
-        // Guion de la película (Línea de tiempo)
-        let peliculaFase = "CREDITOS"; // FASES: "CREDITOS", "ESPERA_CREDITOS", "PANEO_CIELO", "PELICULA_ACTIVA"
-        let tiempoFase = 0;
-        let camaraY = -200; // Efecto de movimiento de cámara
-        let opacidadPaisaje = 0;
-        let relampagoEfecto = 0;
+        let nieblaHumo = [];
+        let destelloTormenta = 0;
+        let estadoCine = "PANEO"; // PANEO, PELICULA
+        let camY = -120;
+        let introAlpha = 1;
 
-        const guionVoces = [
-            "INICIANDO TRANSMISIÓN... SINTONÍA AFECTIVA LOGRADA.",
-            "TE AMO MAMÁ. SOS EL MOTOR DE TODO MI UNIVERSO.",
-            "ESCANEANDO ENTORNO... NINGÚN LUGAR ES TAN SEGURO COMO TU ABRAZO.",
-            "PRODUCCIÓN COMPLETADA CON ÉXITO PARA LA MEJOR MAMÁ."
+        const lineasGuion = [
+            "Estableciendo conexión en este rincón del mundo...",
+            "Mamá: sos mi lugar seguro, mi guía y mi motor.",
+            "Buscando en los registros... No existe amor más puro que el tuyo.",
+            "Secuencia terminada. Gracias por ser la mejor todos los días."
         ];
-        let vozIndex = 0;
+        let guionIdx = 0;
 
         function resize() {
             w = canvas.width = window.innerWidth;
@@ -74,159 +72,254 @@
         window.addEventListener('resize', resize);
         resize();
 
-        function inicializarPelicula() {
-            // Setup Créditos iniciales
-            fragmentos = [];
-            ctx.font = "bold 42px monospace";
-            const texto = "FILM_PRESENTS";
-            let startX = cX - ctx.measureText(texto).width / 2;
-            for (let i = 0; i < texto.length; i++) {
-                let angulo = Math.random() * Math.PI * 2;
-                fragmentos.push({
-                    letra: texto[i],
-                    x: cX + Math.cos(angulo) * Math.max(w, h),
-                    y: cY + Math.sin(angulo) * Math.max(w, h),
-                    targetX: startX + ctx.measureText(texto.substring(0, i)).width + ctx.measureText(texto[i]).width / 2,
-                    rotacion: Math.random() * 5, velocidad: 0.04
-                });
-            }
-
-            // FX: Lluvia cinematográfica de fondo
-            for(let i=0; i<60; i++) {
-                lluvia.push({ x: Math.random() * w, y: Math.random() * h, v: Math.random() * 8 + 12, l: Math.random() * 15 + 10 });
+        // Inicializar efectos cinemáticos masivos
+        function initFX() {
+            lluvia = [];
+            for(let i=0; i<110; i++) {
+                lluvia.push({ x: Math.random() * w, y: Math.random() * h, speed: Math.random() * 12 + 15, len: Math.random() * 20 + 15, opacity: Math.random() * 0.15 + 0.05 });
             }
         }
 
-        function proyeccionSubtitulos() {
-            subtitulos.style.opacity = "0";
+        function avanzarSubtitulos() {
+            subText.style.opacity = "0";
             setTimeout(() => {
-                subtitulos.innerHTML = `<span>TRANS_MAMÁ // REC_ONLINE</span>"${guionVoces[vozIndex]}"`;
-                subtitulos.style.opacity = "1";
-                vozIndex = (vozIndex + 1) % guionVoces.length;
-            }, 1000);
+                subText.innerHTML = `<span>Sintonía_Mamá // Registro_${guionIdx + 1}</span>"${lineasGuion[guionIdx]}"`;
+                subText.style.opacity = "1";
+                guionIdx = (guionIdx + 1) % lineasGuion.length;
+            }, 800);
         }
 
-        // ELEMENTO FX: DIBUJO VECTORIAL DE LA CABAÑA DE TU FOTO
-        function cineDibujarCabaña(x, y, scale) {
-            ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
-            ctx.fillStyle = "#f5f7f6"; ctx.fillRect(-40, -15, 80, 45); // Paredes blancas
-            ctx.fillStyle = "#1a211e"; ctx.beginPath(); ctx.moveTo(-46, -15); ctx.lineTo(0, -42); ctx.lineTo(46, -15); ctx.closePath(); ctx.fill(); // Techo oscuro
-            ctx.fillStyle = "#333b37"; ctx.fillRect(28, -35, 8, 15); // Chimenea
-            ctx.fillStyle = "#101713"; ctx.fillRect(-5, 12, 11, 18); // Puerta
-            ctx.fillStyle = "#fbffd4"; ctx.shadowBlur = 10; ctx.shadowColor = "#ffeb3b"; // Ventanas encendidas con luz cálida
-            for(let vX of [-28, -12, 12, 28]) { ctx.fillRect(vX-5, -5, 10, 11); ctx.fillRect(vX-5, 12, 10, 11); }
+        // Renderizado detallado con volumen de la Cabaña de tu foto
+        function renderCasaCinematica(x, y, scale) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            // Sombras ambientales inferiores para que no flote en la nada
+            let shadowGrad = ctx.createRadialGradient(0, 35, 10, 0, 35, 90);
+            shadowGrad.addColorStop(0, 'rgba(2, 8, 5, 0.7)');
+            shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = shadowGrad;
+            ctx.beginPath(); ctx.ellipse(0, 35, 80, 15, 0, 0, Math.PI*2); ctx.fill();
+
+            // 1. Base estructural de piedra (Gris con textura de profundidad)
+            ctx.fillStyle = "#333a36";
+            ctx.fillRect(-45, 20, 90, 15);
+            ctx.fillStyle = "#272d2a"; // Lado en sombra para volumen 3D
+            ctx.fillRect(5, 20, 40, 15);
+
+            // 2. Paredes principales (Blanco roto con degradado de luz ambiental)
+            let wallGrad = ctx.createLinearGradient(-40, 0, 40, 0);
+            wallGrad.addColorStop(0, "#f1f5f3");
+            wallGrad.addColorStop(0.6, "#e2e8f0");
+            wallGrad.addColorStop(1, "#cbd5e1");
+            ctx.fillStyle = wallGrad;
+            ctx.fillRect(-42, -25, 84, 45);
+
+            // 3. Techo a dos aguas complejo (Gris oscuro texturizado)
+            ctx.fillStyle = "#1e293b";
+            ctx.beginPath();
+            ctx.moveTo(-48, -25);
+            ctx.lineTo(0, -55);
+            ctx.lineTo(48, -25);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Sombra proyectada del techo sobre la pared
+            ctx.fillStyle = "rgba(15, 23, 42, 0.25)";
+            ctx.beginPath();
+            ctx.moveTo(-42, -25); ctx.lineTo(0, -25); ctx.lineTo(0, -15);
+            ctx.closePath(); ctx.fill();
+
+            // 4. Chimenea realista trasera
+            ctx.fillStyle = "#334155";
+            ctx.fillRect(25, -46, 9, 25);
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(31, -46, 3, 25); // Relieve oscuro
+
+            // 5. Buhardillas superiores (Las minicunas de techo de tu foto)
+            function drawDormer(bx) {
+                ctx.fillStyle = "#e2e8f0";
+                ctx.beginPath();
+                ctx.moveTo(bx - 10, -25); ctx.lineTo(bx, -40); ctx.lineTo(bx + 10, -25);
+                ctx.closePath(); ctx.fill();
+                ctx.fillStyle = "#0f172a"; // Mini ventana interior
+                ctx.fillRect(bx - 4, -32, 8, 7);
+            }
+            drawDormer(-20);
+            drawDormer(20);
+
+            // 6. Ventanas con luz cálida interna realista (Efecto brillo suave)
+            ctx.save();
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = "rgba(254, 240, 138, 0.4)";
+            ctx.fillStyle = "#fef08a";
+            
+            let vPos = [-30, -12, 12, 30];
+            vPos.forEach(vx => {
+                // Piso superior
+                ctx.fillRect(vx - 5, -14, 10, 12);
+                // Piso inferior
+                ctx.fillRect(vx - 5, 4, 10, 12);
+            });
+            ctx.restore();
+
+            // Marcos finos sobre las ventanas para dar realismo
+            ctx.strokeStyle = "#475569";
+            ctx.lineWidth = 0.5;
+            vPos.forEach(vx => {
+                ctx.strokeRect(vx - 5, -14, 10, 12);
+                ctx.strokeRect(vx - 5, 4, 10, 12);
+            });
+
+            // Puerta principal central
+            ctx.fillStyle = "#0f172a";
+            ctx.fillRect(-6, 4, 12, 16);
+
             ctx.restore();
         }
 
-        // ACTOR: EL ROBOT EXPLORADOR
-        function cineDibujarRobot(x, y, t) {
-            ctx.save(); ctx.translate(x, y);
-            let oscila = Math.sin(t * 0.006) * 2;
-            ctx.fillStyle = "#1e2b45"; ctx.fillRect(-22, -10 + oscila, 44, 26); // Chasis
-            ctx.fillStyle = "#0d1421"; ctx.fillRect(-28, 15, 56, 10); // Orugas
-            let radar = Math.sin(t * 0.003) * 0.5; // Escaneo del ojo
-            ctx.translate(0, -10 + oscila); ctx.rotate(radar);
-            ctx.fillStyle = "#ff2a6d"; ctx.shadowBlur = 15; ctx.shadowColor = "#ff2a6d";
-            ctx.beginPath(); ctx.arc(0, -12, 4, 0, Math.PI*2); ctx.fill(); // Ojo láser
-            ctx.restore();
-        }
-
-        function render() {
-            // Simulación de obturador de cámara de cine (Fondo oscuro)
-            ctx.fillStyle = 'rgba(2, 5, 4, 0.3)';
-            ctx.fillRect(0, 0, w, h);
-
-            let temporal = Date.now();
-
-            if (peliculaFase === "CREDITOS") {
-                let listos = true;
-                fragmentos.forEach(p => {
-                    p.x += (p.targetX - p.x) * p.velocidad; p.y += (cY - p.y) * p.velocidad; p.rotacion += (0 - p.rotacion) * p.velocidad;
-                    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rotacion);
-                    ctx.shadowBlur = 15; ctx.shadowColor = '#2aff96'; ctx.fillStyle = '#ffffff';
-                    ctx.font = "bold 38px monospace"; ctx.textAlign = "center"; ctx.fillText(p.letra, 0, 0);
-                    ctx.restore();
-                    if (Math.abs(p.targetX - p.x) > 0.5) listos = false;
-                });
-                if (listos) { peliculaFase = "ESPERA_CREDITOS"; tiempoFase = temporal; }
-
-            } else if (peliculaFase === "ESPERA_CREDITOS") {
-                ctx.save(); ctx.shadowBlur = 25; ctx.shadowColor = '#2aff96'; ctx.fillStyle = '#ffffff';
-                ctx.font = "bold 38px monospace"; ctx.textAlign = "center"; ctx.fillText("FILM_PRESENTS", cX, cY); ctx.restore();
-                if (temporal - tiempoFase > 1200) { peliculaFase = "PANEO_CIELO"; tiempoFase = temporal; }
-
-            } else if (peliculaFase === "PANEO_CIELO" || peliculaFase === "PELICULA_ACTIVA") {
-                // Control del movimiento vertical de la cámara (Traveling de arriba a abajo)
-                if (camaraY < 0) camaraY += 2.5; 
-                if (opacidadPaisaje < 1) opacidadPaisaje += 0.01;
-                if (peliculaFase === "PANEO_CIELO" && camaraY >= 0) {
-                    peliculaFase = "PELICULA_ACTIVA";
-                    proyeccionSubtitulos();
-                    setInterval(proyeccionSubtitulos, 5000);
-                }
-
+            // ACTOR: EL ROBOT EXPLORADOR CINEMÁTICO
+            function renderRobotCine(x, y, t) {
                 ctx.save();
-                ctx.globalAlpha = opacidadPaisaje;
+                ctx.translate(x, y);
 
-                // 1. RENDER DE LA ATMÓSFERA Y EL PAISAJE (Inspirado en tu foto)
-                let degradadoCielo = ctx.createLinearGradient(0, 0, 0, h);
-                degradadoCielo.addColorStop(0, '#040b08'); degradadoCielo.addColorStop(1, '#0e2117');
-                ctx.fillStyle = degradadoCielo; ctx.fillRect(0, 0, w, h);
+                let swing = Math.sin(t * 0.005) * 1.5;
+                ctx.translate(0, swing);
 
-                // Relámpagos aleatorios de tormenta de película
-                if(Math.random() < 0.005) relampagoEfecto = 1;
-                if(relampagoEfecto > 0) {
-                    ctx.fillStyle = `rgba(255, 255, 255, ${relampagoEfecto})`;
-                    ctx.fillRect(0, 0, w, h);
-                    relampagoEfecto -= 0.1;
-                }
+                // Orugas y chasis detallado
+                ctx.fillStyle = "#0f172a";
+                ctx.fillRect(-20, 14, 40, 8);
+                
+                ctx.fillStyle = "#334155"; // Cuerpo metalizado
+                ctx.fillRect(-14, -6, 28, 20);
+                ctx.strokeStyle = "#475569";
+                ctx.strokeRect(-14, -6, 28, 20);
 
-                // FX: Caída de la lluvia sobre las lentes
-                ctx.strokeStyle = "rgba(174, 219, 194, 0.2)"; ctx.lineWidth = 1;
-                lluvia.forEach(r => {
-                    r.y += r.v; if(r.y > h) { r.y = -20; r.x = Math.random() * w; }
-                    ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x, r.y + r.l); ctx.stroke();
-                });
+                // Cabeza y visor óptico neón
+                ctx.fillStyle = "#1e293b";
+                ctx.fillRect(-6, -14, 12, 8);
 
-                // 2. LAS COLINAS DE LA PRADERA (Con desfase de cámaraY)
-                let frameTime = temporal * 0.0003;
-                ctx.fillStyle = "#040b07"; ctx.beginPath(); ctx.moveTo(0, h);
-                for(let x=0; x<=w; x+=20) { ctx.lineTo(x, (h * 0.58) + camaraY + Math.sin(x*0.004 + frameTime)*15); }
-                ctx.lineTo(w, h); ctx.fill();
+                // Foco/Láser cinemático proyectado en el ambiente (Screen blend)
+                let scanAngle = Math.sin(t * 0.002) * 0.6;
+                ctx.save();
+                ctx.globalCompositeOperation = "screen";
+                let laserGrad = ctx.createRadialGradient(0, -10, 5, Math.sin(scanAngle)*80, 40, 120);
+                laserGrad.addColorStop(0, "rgba(255, 42, 109, 0.75)");
+                laserGrad.addColorStop(0.3, "rgba(255, 42, 109, 0.15)");
+                laserGrad.addColorStop(1, "rgba(0,0,0,0)");
+                ctx.fillStyle = laserGrad;
+                
+                ctx.beginPath();
+                ctx.moveTo(0, -10);
+                ctx.lineTo(Math.sin(scanAngle)*80 - 40, 60);
+                ctx.lineTo(Math.sin(scanAngle)*80 + 40, 60);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
 
-                ctx.fillStyle = "#091c12"; ctx.beginPath(); ctx.moveTo(0, h);
-                for(let x=0; x<=w; x+=20) { ctx.lineTo(x, (h * 0.72) + camaraY + Math.sin(x*0.006 + frameTime*1.5)*10); }
-                ctx.lineTo(w, h); ctx.fill();
-
-                // 3. LA PROTAGONISTA: LA CABAÑA BLANCA DE DOS PISOS
-                let casaPos_Y = (h * 0.62) + camaraY + Math.sin(cX * 0.004 + frameTime) * 15;
-                cineDibujarCabaña(cX, casaPos_Y, 1.6);
-
-                // FX: Humo realista saliendo de la chimenea
-                if (humo.length < 30 && temporal % 3 === 0) {
-                    humo.push({ x: cX + (28 * 1.6), y: casaPos_Y - (35 * 1.6), r: 2, a: 0.8 });
-                }
-                ctx.fillStyle = "rgba(42, 255, 150, 0.3)";
-                for(let i=humo.length-1; i>=0; i--) {
-                    let p = humo[i]; p.y -= 0.8; p.x += Math.sin(p.y*0.05)*0.2; p.a -= 0.01; p.r += 0.2;
-                    if(p.a <= 0) { humo.splice(i, 1); continue; }
-                    ctx.save(); ctx.globalAlpha = p.a; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); ctx.restore();
-                }
-
-                // 4. EL ACTOR SECUNDARIO: EL ROBOT EN LA PRADERA DEL FRENTE
-                if (peliculaFase === "PELICULA_ACTIVA") {
-                    let robotY = (h * 0.75) + camaraY;
-                    cineDibujarRobot(cX - 70, robotY, temporal);
-                }
+                // Punto luminoso del lente
+                ctx.fillStyle = "#ff2a6d";
+                ctx.beginPath(); ctx.arc(0, -10, 3, 0, Math.PI*2); ctx.fill();
 
                 ctx.restore();
             }
 
+        function render() {
+            // Fondo cinematográfico: Niebla oscura y tormentosa
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+            skyGrad.addColorStop(0, "#030706");
+            skyGrad.addColorStop(0.5, "#08110d");
+            skyGrad.addColorStop(1, "#0f1f18");
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            let time = Date.now();
+
+            // Animación suave de la cámara al iniciar (Traveling vertical)
+            if (estadoCine === "PANEO") {
+                camY += (0 - camY) * 0.03;
+                if (Math.abs(0 - camY) < 0.5) {
+                    estadoCine = "PELICULA";
+                    avanzarSubtitulos();
+                    setInterval(avanzarSubtitulos, 5000);
+                }
+            }
+
+            // FX Tormenta: Relámpagos atmosféricos esporádicos
+            if (Math.random() < 0.004) destelloTormenta = 0.4;
+            if (destelloTormenta > 0) {
+                ctx.fillStyle = `rgba(167, 243, 208, ${destelloTormenta})`;
+                ctx.fillRect(0, 0, w, h);
+                destelloTormenta -= 0.04;
+            }
+
+            // 1. DIBUJO DE COLINAS CON PROFUNDIDAD DE CAMPO
+            // Colina de fondo brumosa (Perspectiva aérea)
+            ctx.fillStyle = "#07120e";
+            ctx.beginPath(); ctx.moveTo(0, h);
+            for(let x=0; x<=w; x+=30) {
+                ctx.lineTo(x, (h * 0.55) + camY + Math.sin(x*0.003 + time*0.0002)*12);
+            }
+            ctx.lineTo(w, h); ctx.fill();
+
+            // Colina principal donde descansa la cabaña
+            ctx.fillStyle = "#0c1f17";
+            ctx.beginPath(); ctx.moveTo(0, h);
+            for(let x=0; x<=w; x+=20) {
+                ctx.lineTo(x, (h * 0.68) + camY + Math.sin(x*0.005 + time*0.0004)*8);
+            }
+            ctx.lineTo(w, h); ctx.fill();
+
+            // 2. RENDER DE LOS OBJETOS CINEMÁTICOS
+            let houseY = (h * 0.58) + camY + Math.sin(cX*0.005 + time*0.0004)*8;
+            renderCasaCinematica(cX, houseY, w < 450 ? 1.4 : 1.9);
+
+            // Humo volumétrico cinemático (Partículas difuminadas y suaves, no círculos sólidos)
+            if (time % 5 === 0) {
+                let hScale = w < 450 ? 1.4 : 1.9;
+                nieblaHumo.push({ x: cX + (28 * hScale), y: houseY - (46 * hScale), size: 4, alpha: 0.6 });
+            }
+            
+            nieblaHumo.forEach((p, idx) => {
+                p.y -= 0.6;
+                p.x += Math.sin(p.y * 0.02) * 0.3;
+                p.alpha -= 0.006;
+                p.size += 0.2;
+
+                if (p.alpha <= 0) {
+                    nieblaHumo.splice(idx, 1);
+                } else {
+                    ctx.save();
+                    let cloudGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+                    cloudGrad.addColorStop(0, `rgba(16, 185, 129, ${p.alpha * 0.25})`);
+                    cloudGrad.addColorStop(1, "rgba(0,0,0,0)");
+                    ctx.fillStyle = cloudGrad;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+                    ctx.restore();
+                }
+            });
+
+            // 3. ACTOR ROBOT EN EL FRENTE DE LA ESCENA
+            if (estadoCine === "PELICULA") {
+                renderRobotCine(cX - 65, (h * 0.78) + camY, time);
+            }
+
+            // 4. FX CAPA SUPERIOR: EFECTO DE LLUVIA DIRECCIONAL CINEMÁTICA
+            ctx.lineWidth = 1;
+            lluvia.forEach(r => {
+                r.y += r.speed;
+                r.x -= r.speed * 0.1; // Caída diagonal por el viento simulado
+                if (r.y > h) { r.y = -20; r.x = Math.random() * w; }
+                ctx.strokeStyle = `rgba(209, 250, 229, ${r.opacity})`;
+                ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x - r.len*0.1, r.y + r.len); ctx.stroke();
+            });
+
             requestAnimationFrame(render);
         }
 
-        inicializarPelicula();
-        setTimeout(render, 100);
+        initFX();
+        render();
     </script>
 </body>
 </html>
