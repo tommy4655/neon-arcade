@@ -3,8 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ORBITAL SIMULATOR // SOLAR SYSTEM</title>
+    <title>N.E.O.N. ORBITAL ENGINE - v3.1</title>
     <style>
+        :root {
+            --neon-cyan: #00e5ff;
+            --neon-purple: #bd00ff;
+            --neon-blue: #008cff;
+            --dark-space: #010408;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -15,91 +22,85 @@
         }
 
         body {
-            background-color: #010308;
+            background-color: var(--dark-space);
             color: #ffffff;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             overflow: hidden;
             width: 100vw;
             height: 100vh;
         }
 
-        #canvasSimulador {
+        #orbitalCanvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at center, #050b14 0%, #010308 100%);
+            background: radial-gradient(circle at center, #051021 0%, #010408 100%);
         }
 
-        .interfaz-telemetria {
+        /* HUD Táctico (Heads-Up Display) de N.E.O.N. */
+        .telemetria {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 13px;
-            color: #00e5ff;
+            bottom: 25px;
+            left: 25px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--neon-cyan);
             text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+            letter-spacing: 1px;
             pointer-events: none;
-            line-height: 1.6;
-            background: rgba(1, 3, 8, 0.6);
-            padding: 10px;
-            border-left: 2px solid #00e5ff;
+            text-transform: uppercase;
         }
 
-        .guia-usuario {
+        .logo-neon {
             position: absolute;
             bottom: 20px;
-            width: 100%;
-            text-align: center;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.4);
-            letter-spacing: 1px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            opacity: 0.9;
             pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="interfaz-telemetria">
-        ⚡ SISTEMA: SIMULACIÓN GRAVITATORIA MUNDIAL<br>
-        🪐 PLANETAS ACTIVOS: <span id="contador-planetas">0</span><br>
-        💥 COLISIONES SOLARES: <span id="contador-choques">0</span>
+    <div class="telemetria">
+        N.E.O.N. ORBITAL ENGINE - v3.1 | ACTIVE PLANETS: <span id="contador-planetas">0</span>
     </div>
 
-    <div class="guia-usuario">[ ARRASTRE Y SUELTE EN LA PANTALLA PARA LANZAR UN PLANETA ]</div>
+    <svg class="logo-neon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 10 L90 30 L90 70 L50 90 L10 70 L10 30 Z" stroke="#00e5ff" stroke-width="2" fill="none"/>
+        <path d="M10 30 L50 50 L90 30 M50 50 L50 90 M10 70 L50 50 L90 70" stroke="#00e5ff" stroke-width="1" fill="none"/>
+        <text x="50%" y="55%" text-anchor="middle" dy=".3em" fill="#00e5ff" font-family="monospace" font-size="20" font-weight="bold">N.E.O.N.</text>
+    </svg>
 
-    <canvas id="canvasSimulador"></canvas>
+    <canvas id="orbitalCanvas"></canvas>
 
     <script>
-        const canvas = document.getElementById('canvasSimulador');
+        const canvas = document.getElementById('orbitalCanvas');
         const ctx = canvas.getContext('2d');
         const txtPlanetas = document.getElementById('contador-planetas');
-        const txtChoques = document.getElementById('contador-choques');
 
         let centroX, centroY;
-        const G = 0.15; // Constante gravitatoria de la simulación
+        const G = 0.2; // Constante gravitatoria avanzada
+
         let planetas = [];
-        let particulas = [];
-        let choquesSolares = 0;
 
-        // Variables de interacción táctil para el lanzamiento
-        let toqueInicioX = 0;
-        let toqueInicioY = 0;
-        let touchActualX = 0;
-        let touchActualY = 0;
-        let estaArrastrando = false;
-
-        // Configuración de la estrella central (El Sol)
+        // Sol Central Pulsante (El de la imagen HD)
         const Sol = {
             x: 0,
             y: 0,
-            masa: 15000,
-            radio: 35,
-            color: '#ff6a00',
+            masa: 18000,
+            radio: 40,
+            colorSol: '#ff6a00',
+            colorFlares: '#ff2a00',
             pulso: 0
         };
 
-        function ajustarPantalla() {
+        function ajustarDimensiones() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             centroX = canvas.width / 2;
@@ -107,167 +108,58 @@
             Sol.x = centroX;
             Sol.y = centroY;
         }
-        window.addEventListener('resize', ajustarPantalla);
-        ajustarPantalla();
+        window.addEventListener('resize', ajustarDimensiones);
+        ajustarDimensiones();
 
-        // --- MANEJO DE CONTROLES (Celular y PC) ---
-        function comenzarInteraccion(x, y) {
-            toqueInicioX = x;
-            toqueInicioY = y;
-            touchActualX = x;
-            touchActualY = y;
-            estaArrastrando = true;
-        }
-
-        function moverInteraccion(x, y) {
-            if (!estaArrastrando) return;
-            touchActualX = x;
-            touchActualY = y;
-        }
-
-        function finalizarInteraccion() {
-            if (!estaArrastrando) return;
-            estaArrastrando = false;
-
-            // Calcular el vector de velocidad basado en la longitud de la flecha arrastrada
-            const fX = (toqueInicioX - touchActualX) * 0.08;
-            const fY = (toqueInicioY - touchActualY) * 0.08;
-
-            // Inyectar nuevo planeta al simulador espacial
-            planetas.push({
-                x: toqueInicioX,
-                y: toqueInicioY,
-                vx: fX,
-                vy: fY,
-                radio: Math.random() * 5 + 4, // Tamaños variados
-                masa: Math.random() * 10 + 5,
-                color: `hsl(${Math.random() * 360}, 85%, 65%)`, // Colores vivos internacionales
-                estela: []
-            });
-            txtPlanetas.textContent = planetas.length;
-        }
-
-        // Listeners Táctiles
-        window.addEventListener('touchstart', (e) => comenzarInteraccion(e.touches[0].clientX, e.touches[0].clientY));
-        window.addEventListener('touchmove', (e) => moverInteraccion(e.touches[0].clientX, e.touches[0].clientY));
-        window.addEventListener('touchend', finalizarInteraccion);
-
-        // Listeners Mouse (PC)
-        window.addEventListener('mousedown', (e) => comenzarInteraccion(e.clientX, e.clientY));
-        window.addEventListener('mousemove', (e) => moverInteraccion(e.clientX, e.clientY));
-        window.addEventListener('mouseup', finalizarInteraccion);
-
-        function crearLlamaradaSolar(x, y, color) {
-            for (let i = 0; i < 15; i++) {
-                const ang = Math.random() * Math.PI * 2;
-                const vel = Math.random() * 3 + 1;
-                particulas.push({
-                    x: x, y: y,
-                    vx: Math.cos(ang) * vel,
-                    vy: Math.sin(ang) * vel,
-                    vida: 1.0,
-                    desgaste: Math.random() * 0.04 + 0.02,
-                    color: color
-                });
-            }
-        }
-
-        // --- BUCLE FÍSICO CENTRAL ---
-        function actualizarUniverso() {
-            // 1. Limpieza con efecto sutil de barrido para dejar rastro de estrellas
-            ctx.fillStyle = 'rgba(1, 3, 8, 0.2)';
+        // --- SISTEMA FÍSICO DE ÓRBITAS TÁCTICAS ---
+        function bucleMotor() {
+            // Limpieza con rastro sutil
+            ctx.fillStyle = 'rgba(1, 4, 8, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. Dibujar Sol Central Pulsante y sus destellos térmicos
-            Sol.pulso = Math.sin(Date.now() * 0.005) * 2;
+            // 1. Renderizar Sol Central con brillo avanzado
+            Sol.pulso = Math.sin(Date.now() * 0.005) * 3;
             ctx.save();
-            ctx.fillStyle = Sol.color;
-            ctx.shadowBlur = 30 + Sol.pulso * 2;
-            ctx.shadowColor = '#ff2a00';
+            ctx.fillStyle = Sol.colorSol;
+            ctx.shadowBlur = 40 + Sol.pulso * 3;
+            ctx.shadowColor = Sol.colorFlares;
             ctx.beginPath();
             ctx.arc(Sol.x, Sol.y, Sol.radio + Sol.pulso, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
 
-            // Dibujar línea de guía si el usuario está apuntando un tiro orbital
-            if (estaArrastrando) {
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(toqueInicioX, toqueInicioY);
-                ctx.lineTo(touchActualX, touchActualY);
-                ctx.stroke();
-                ctx.setLineDash([]);
-
-                // Pre-visualizar planeta listo para salir eyectado
-                ctx.fillStyle = '#00e5ff';
-                ctx.beginPath();
-                ctx.arc(toqueInicioX, toqueInicioY, 6, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // 3. Renderizar Partículas de Plasma Solar
-            for (let i = particulas.length - 1; i >= 0; i--) {
-                let p = particulas[i];
-                p.x += p.vx; p.y += p.vy;
-                p.vida -= p.desgaste;
-                if (p.vida <= 0) { particulas.splice(i, 1); continue; }
-                ctx.fillStyle = p.color;
-                ctx.globalAlpha = p.vida;
-                ctx.fillRect(p.x, p.y, Math.random() * 3 + 1, Math.random() * 3 + 1);
-            }
-            ctx.globalAlpha = 1.0;
-
-            // 4. Calcular Gravedad y Órbitas de los Planetas
+            // 2. Calcular Físicas Gravitatorias y Órbitas Geométricas
             for (let i = planetas.length - 1; i >= 0; i--) {
                 let p = planetas[i];
 
-                // Vectores de distancia respecto al centro del Sol
+                // Físicas (Newton)
                 const dx = Sol.x - p.x;
                 const dy = Sol.y - p.y;
                 const distancia = Math.hypot(dx, dy);
 
-                // Si se aleja demasiado al espacio profundo infinito, se elimina del sistema
-                if (distancia > Math.max(canvas.width, canvas.height) * 2) {
-                    planetas.splice(i, 1);
-                    txtPlanetas.textContent = planetas.length;
-                    continue;
-                }
-
-                // COLISIÓN TÉRMICA CONTRA EL SOL
+                // Colisión Solar
                 if (distancia <= Sol.radio + p.radio) {
-                    crearLlamaradaSolar(p.x, p.y, '#ffea00');
-                    choquesSolares++;
-                    txtChoques.textContent = choquesSolares;
                     planetas.splice(i, 1);
                     txtPlanetas.textContent = planetas.length;
                     continue;
                 }
 
-                // Ecuación Física: Fuerza de Newton F = G * (m1 * m2) / d^2
                 const fuerza = (G * Sol.masa * p.masa) / (distancia * distancia);
-                
-                // Aceleración generada
                 const ax = (fuerza * (dx / distancia)) / p.masa;
                 const ay = (fuerza * (dy / distancia)) / p.masa;
 
-                // Modificar velocidades espaciales por la gravedad
                 p.vx += ax;
                 p.vy += ay;
-
-                // Actualizar posiciones lineales
                 p.x += p.vx;
                 p.y += p.vy;
 
-                // Guardar historial para dibujar la órbita/estela gravitacional
+                // 3. Dibujar Órbitas Geométricas (Líneas Cyan Tácticas)
                 p.estela.push({ x: p.x, y: p.y });
-                if (p.estela.length > 35) p.estela.shift();
+                if (p.estela.length > 50) p.estela.shift();
 
-                // Dibujar Estela Cósmica
-                ctx.strokeStyle = p.color;
-                ctx.globalAlpha = 0.25;
-                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = p.colorOrbita;
+                ctx.globalAlpha = 0.3;
+                ctx.lineWidth = 1.2;
                 ctx.beginPath();
                 for (let j = 0; j < p.estela.length; j++) {
                     if (j === 0) ctx.moveTo(p.estela[j].x, p.estela[j].y);
@@ -276,18 +168,39 @@
                 ctx.stroke();
                 ctx.globalAlpha = 1.0;
 
-                // Dibujar Cuerpo Planetario
+                // 4. Dibujar Cuerpo Planetario HD
                 ctx.fillStyle = p.color;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.radio, 0, Math.PI * 2);
                 ctx.fill();
             }
 
-            requestAnimationFrame(actualizarUniverso);
+            requestAnimationFrame(bucleMotor);
         }
 
-        // Iniciar el motor astrofísico
-        requestAnimationFrame(actualizarUniverso);
+        // --- SISTEMA DE INYECCIÓN DE PLANETAS (Táctil) ---
+        // Para pruebas, lanzamos 3 planetas automáticos para ver el motor
+        setTimeout(() => lanzarPlaneta('Tierrra', centroX + 150, centroY, 0, -4.5, 7, '#00e5ff'), 500);
+        setTimeout(() => lanzarPlaneta('Marte', centroX + 220, centroY, 0, -3.8, 5, '#ff4d4d'), 1000);
+        setTimeout(() => lanzarPlaneta('Júpiter', centroX - 350, centroY, 0, 3.2, 12, '#f0d6b4', '#bd00ff'), 1500);
+
+        function lanzarPlaneta(nombre, x, y, vx, vy, radio, color, colorOrbita = '#00e5ff') {
+            planetas.push({
+                nombre: nombre,
+                x: x,
+                y: y,
+                vx: vx,
+                vy: vy,
+                radio: radio,
+                masa: radio * 2,
+                color: color,
+                colorOrbita: colorOrbita, // Cyan o Púrpura según la imagen
+                estela: []
+            });
+            txtPlanetas.textContent = planetas.length;
+        }
+
+        requestAnimationFrame(bucleMotor);
     </script>
 </body>
 </html>
