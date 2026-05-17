@@ -3,16 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON PONG .IO // SUPREME ARENA</title>
+    <title>ORBITAL SIMULATOR // SOLAR SYSTEM</title>
     <style>
-        :root {
-            --neon-blue: #00e5ff;
-            --neon-purple: #bd00ff;
-            --neon-green: #00ff66;
-            --neon-red: #ff0055;
-            --dark-bg: #02060c;
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
@@ -23,371 +15,279 @@
         }
 
         body {
-            background-color: var(--dark-bg);
+            background-color: #010308;
             color: #ffffff;
             font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
             width: 100vw;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
-        #interfaz-juego {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        canvas {
+        #canvasSimulador {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background: radial-gradient(circle at center, #050b14 0%, #010308 100%);
         }
 
-        .hud-datos {
+        .interfaz-telemetria {
             position: absolute;
             top: 20px;
-            width: calc(100% - 40px);
-            display: flex;
-            justify-content: space-between;
-            font-size: 16px;
-            font-weight: bold;
-            color: var(--neon-blue);
+            left: 20px;
+            font-size: 13px;
+            color: #00e5ff;
             text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
             pointer-events: none;
-            z-index: 5;
-            padding: 0 10px;
+            line-height: 1.6;
+            background: rgba(1, 3, 8, 0.6);
+            padding: 10px;
+            border-left: 2px solid #00e5ff;
         }
 
-        #pantalla-menu {
+        .guia-usuario {
             position: absolute;
+            bottom: 20px;
             width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(5, 19, 41, 0.95) 0%, rgba(2, 6, 12, 0.98) 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            transition: opacity 0.3s ease;
-        }
-
-        .titulo {
-            font-size: 36px;
-            font-weight: 900;
-            letter-spacing: 6px;
-            color: #ffffff;
             text-align: center;
-            margin-bottom: 10px;
-            text-shadow: 0 0 15px var(--neon-purple);
-        }
-
-        .titulo span {
-            color: var(--neon-blue);
-            text-shadow: 0 0 15px var(--neon-blue);
-        }
-
-        .subtitulo {
             font-size: 11px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 40px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .btn-play {
-            background: transparent;
-            border: 2px solid var(--neon-blue);
-            color: var(--neon-blue);
-            padding: 15px 45px;
-            font-size: 16px;
-            font-weight: bold;
-            letter-spacing: 3px;
-            cursor: pointer;
-            border-radius: 4px;
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-        }
-
-        .btn-play:hover, .btn-play:active {
-            background: var(--neon-blue);
-            color: var(--dark-bg);
-            box-shadow: 0 0 25px var(--neon-blue);
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 1px;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <div id="interfaz-juego">
-        <div class="hud-datos">
-            <div id="hud-score">NET_SCORE: 0000</div>
-            <div id="hud-multi">MULTIPLIER: x1.0</div>
-        </div>
-        
-        <canvas id="arenaCanvas"></canvas>
-
-        <div id="pantalla-menu">
-            <h1 class="titulo">NEON PONG<span>.IO</span></h1>
-            <div class="subtitulo">Global Hack_Arena v2.0</div>
-            <button class="btn-play" onclick="arrancarServidor()">Inicializar Red</button>
-        </div>
+    <div class="interfaz-telemetria">
+        ⚡ SISTEMA: SIMULACIÓN GRAVITATORIA MUNDIAL<br>
+        🪐 PLANETAS ACTIVOS: <span id="contador-planetas">0</span><br>
+        💥 COLISIONES SOLARES: <span id="contador-choques">0</span>
     </div>
 
+    <div class="guia-usuario">[ ARRASTRE Y SUELTE EN LA PANTALLA PARA LANZAR UN PLANETA ]</div>
+
+    <canvas id="canvasSimulador"></canvas>
+
     <script>
-        const canvas = document.getElementById('arenaCanvas');
+        const canvas = document.getElementById('canvasSimulador');
         const ctx = canvas.getContext('2d');
-        const menu = document.getElementById('pantalla-menu');
-        const hudScore = document.getElementById('hud-score');
-        const hudMulti = document.getElementById('hud-multi');
+        const txtPlanetas = document.getElementById('contador-planetas');
+        const txtChoques = document.getElementById('contador-choques');
 
-        let juegoEnCurso = false;
-        let score = 0;
-        let multiplicador = 1.0;
-        let centroX, centroY, radioArena;
+        let centroX, centroY;
+        const G = 0.15; // Constante gravitatoria de la simulación
+        let planetas = [];
+        let particulas = [];
+        let choquesSolares = 0;
 
-        // Propiedades del Jugador
-        const jugador = {
-            angulo: 0,
-            anchoAngular: 0.45,
-            grosor: 10,
-            color: '#00ff66',
-            targetAngulo: 0
+        // Variables de interacción táctil para el lanzamiento
+        let toqueInicioX = 0;
+        let toqueInicioY = 0;
+        let touchActualX = 0;
+        let touchActualY = 0;
+        let estaArrastrando = false;
+
+        // Configuración de la estrella central (El Sol)
+        const Sol = {
+            x: 0,
+            y: 0,
+            masa: 15000,
+            radio: 35,
+            color: '#ff6a00',
+            pulso: 0
         };
 
-        // Núcleo central
-        const nucleo = { radius: 30, color: '#bd00ff', pulso: 0 };
-        
-        let esferas = [];
-        let particulas = [];
-        let intervaloGeneracion = 100;
-        let contadorFotogramas = 0;
-        let destelloFondo = 0;
-
-        function ajustarDimensiones() {
+        function ajustarPantalla() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             centroX = canvas.width / 2;
             centroY = canvas.height / 2;
-            radioArena = Math.min(canvas.width, canvas.height) * 0.42;
+            Sol.x = centroX;
+            Sol.y = centroY;
+        }
+        window.addEventListener('resize', ajustarPantalla);
+        ajustarPantalla();
+
+        // --- MANEJO DE CONTROLES (Celular y PC) ---
+        function comenzarInteraccion(x, y) {
+            toqueInicioX = x;
+            toqueInicioY = y;
+            touchActualX = x;
+            touchActualY = y;
+            estaArrastrando = true;
         }
 
-        window.addEventListener('resize', ajustarDimensiones);
-        ajustarDimensiones();
-
-        function arrancarServidor() {
-            menu.style.opacity = '0';
-            setTimeout(() => menu.style.display = 'none', 300);
-            
-            juegoEnCurso = true;
-            score = 0;
-            multiplicador = 1.0;
-            esferas = [];
-            particulas = [];
-            contadorFotogramas = 0;
-            intervaloGeneracion = 100;
-            hudScore.textContent = "NET_SCORE: 0000";
-            hudMulti.textContent = "MULTIPLIER: x1.0";
-            
-            bucleMotor();
+        function moverInteraccion(x, y) {
+            if (!estaArrastrando) return;
+            touchActualX = x;
+            touchActualY = y;
         }
 
-        function crearExplosion(x, y, color, cantidad) {
-            for (let i = 0; i < cantidad; i++) {
+        function finalizarInteraccion() {
+            if (!estaArrastrando) return;
+            estaArrastrando = false;
+
+            // Calcular el vector de velocidad basado en la longitud de la flecha arrastrada
+            const fX = (toqueInicioX - touchActualX) * 0.08;
+            const fY = (toqueInicioY - touchActualY) * 0.08;
+
+            // Inyectar nuevo planeta al simulador espacial
+            planetas.push({
+                x: toqueInicioX,
+                y: toqueInicioY,
+                vx: fX,
+                vy: fY,
+                radio: Math.random() * 5 + 4, // Tamaños variados
+                masa: Math.random() * 10 + 5,
+                color: `hsl(${Math.random() * 360}, 85%, 65%)`, // Colores vivos internacionales
+                estela: []
+            });
+            txtPlanetas.textContent = planetas.length;
+        }
+
+        // Listeners Táctiles
+        window.addEventListener('touchstart', (e) => comenzarInteraccion(e.touches[0].clientX, e.touches[0].clientY));
+        window.addEventListener('touchmove', (e) => moverInteraccion(e.touches[0].clientX, e.touches[0].clientY));
+        window.addEventListener('touchend', finalizarInteraccion);
+
+        // Listeners Mouse (PC)
+        window.addEventListener('mousedown', (e) => comenzarInteraccion(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => moverInteraccion(e.clientX, e.clientY));
+        window.addEventListener('mouseup', finalizarInteraccion);
+
+        function crearLlamaradaSolar(x, y, color) {
+            for (let i = 0; i < 15; i++) {
                 const ang = Math.random() * Math.PI * 2;
-                const vel = Math.random() * 4 + 2;
+                const vel = Math.random() * 3 + 1;
                 particulas.push({
                     x: x, y: y,
                     vx: Math.cos(ang) * vel,
                     vy: Math.sin(ang) * vel,
                     vida: 1.0,
-                    degradado: Math.random() * 0.03 + 0.02,
-                    color: color,
-                    tamano: Math.random() * 3 + 1
+                    desgaste: Math.random() * 0.04 + 0.02,
+                    color: color
                 });
             }
         }
 
-        window.addEventListener('touchmove', (e) => {
-            if (!juegoEnCurso) return;
-            calcularControl(e.touches[0].clientX, e.touches[0].clientY);
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!juegoEnCurso) return;
-            calcularControl(e.clientX, e.clientY);
-        });
-
-        function calcularControl(clientX, clientY) {
-            const dx = clientX - centroX;
-            const dy = clientY - centroY;
-            jugador.targetAngulo = Math.atan2(dy, dx);
-        }
-
-        function inyectarEsfera() {
-            const anguloDireccion = Math.random() * Math.PI * 2;
-            const velocidadBase = 3.5 + (score / 400);
-            esferas.push({
-                x: centroX,
-                y: centroY,
-                vx: Math.cos(anguloDireccion) * velocidadBase,
-                vy: Math.sin(anguloDireccion) * velocidadBase,
-                radio: 6,
-                color: '#00e5ff'
-            });
-            crearExplosion(centroX, centroY, '#bd00ff', 8);
-        }
-
-        function bucleMotor() {
-            if (!juegoEnCurso) return;
-
-            // 1. Dibujar Fondos Dinámicos
-            ctx.fillStyle = '#02060c';
+        // --- BUCLE FÍSICO CENTRAL ---
+        function actualizarUniverso() {
+            // 1. Limpieza con efecto sutil de barrido para dejar rastro de estrellas
+            ctx.fillStyle = 'rgba(1, 3, 8, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Rejilla de Fondo Estilo Cyber
-            ctx.strokeStyle = `rgba(0, 229, 255, ${0.03 + destelloFondo})`;
-            ctx.lineWidth = 1;
-            const tamanoCaja = 40;
-            for (let x = 0; x < canvas.width; x += tamanoCaja) {
-                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-            }
-            for (let y = 0; y < canvas.height; y += tamanoCaja) {
-                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-            }
-            if (destelloFondo > 0) destelloFondo -= 0.05;
-
-            // Anillo Exterior de la Arena
-            ctx.strokeStyle = 'rgba(0, 229, 255, 0.15)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(centroX, centroY, radioArena, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // 2. Movimiento del Jugador
-            let diferenciaAngulo = jugador.targetAngulo - jugador.angulo;
-            while (diferenciaAngulo < -Math.PI) diferenciaAngulo += Math.PI * 2;
-            while (diferenciaAngulo > Math.PI) diferenciaAngulo -= Math.PI * 2;
-            jugador.angulo += diferenciaAngulo * 0.25;
-
-            // Dibujar Arco del Jugador con Brillo de Neón Real
+            // 2. Dibujar Sol Central Pulsante y sus destellos térmicos
+            Sol.pulso = Math.sin(Date.now() * 0.005) * 2;
             ctx.save();
-            ctx.strokeStyle = jugador.color;
-            ctx.lineWidth = jugador.grosor;
-            ctx.lineCap = 'round';
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = jugador.color;
+            ctx.fillStyle = Sol.color;
+            ctx.shadowBlur = 30 + Sol.pulso * 2;
+            ctx.shadowColor = '#ff2a00';
             ctx.beginPath();
-            ctx.arc(centroX, centroY, radioArena - jugador.grosor / 2, jugador.angulo - jugador.anchoAngular / 2, jugador.angulo + jugador.anchoAngular / 2);
-            ctx.stroke();
-            ctx.restore();
-
-            // 3. Dibujar Núcleo Pulsante
-            nucleo.pulso = Math.sin(contadorFotogramas * 0.05) * 3;
-            ctx.save();
-            ctx.fillStyle = nucleo.color;
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = nucleo.color;
-            ctx.beginPath();
-            ctx.arc(centroX, centroY, nucleo.radius + nucleo.pulso, 0, Math.PI * 2);
+            ctx.arc(Sol.x, Sol.y, Sol.radio + Sol.pulso, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
 
-            // 4. Actualizar Partículas
+            // Dibujar línea de guía si el usuario está apuntando un tiro orbital
+            if (estaArrastrando) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(toqueInicioX, toqueInicioY);
+                ctx.lineTo(touchActualX, touchActualY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Pre-visualizar planeta listo para salir eyectado
+                ctx.fillStyle = '#00e5ff';
+                ctx.beginPath();
+                ctx.arc(toqueInicioX, toqueInicioY, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 3. Renderizar Partículas de Plasma Solar
             for (let i = particulas.length - 1; i >= 0; i--) {
                 let p = particulas[i];
                 p.x += p.vx; p.y += p.vy;
-                p.vida -= p.degradado;
+                p.vida -= p.desgaste;
                 if (p.vida <= 0) { particulas.splice(i, 1); continue; }
                 ctx.fillStyle = p.color;
                 ctx.globalAlpha = p.vida;
-                ctx.fillRect(p.x, p.y, p.tamano, p.tamano);
+                ctx.fillRect(p.x, p.y, Math.random() * 3 + 1, Math.random() * 3 + 1);
             }
             ctx.globalAlpha = 1.0;
 
-            // 5. Gestión de Esferas
-            contadorFotogramas++;
-            if (contadorFotogramas % Math.max(25, intervaloGeneracion) === 0) {
-                inyectarEsfera();
-                if (intervaloGeneracion > 35) intervaloGeneracion -= 2;
-            }
+            // 4. Calcular Gravedad y Órbitas de los Planetas
+            for (let i = planetas.length - 1; i >= 0; i--) {
+                let p = planetas[i];
 
-            for (let i = esferas.length - 1; i >= 0; i--) {
-                let e = esferas[i];
-                e.x += e.vx; e.y += e.vy;
+                // Vectores de distancia respecto al centro del Sol
+                const dx = Sol.x - p.x;
+                const dy = Sol.y - p.y;
+                const distancia = Math.hypot(dx, dy);
 
-                // Dibujar Esfera con estela integrada
-                ctx.fillStyle = e.color;
-                ctx.beginPath();
-                ctx.arc(e.x, e.y, e.radio, 0, Math.PI * 2);
-                ctx.fill();
-
-                const distCentro = Math.hypot(e.x - centroX, e.y - centroY);
-
-                // Rebote Periférico
-                if (distCentro >= radioArena - jugador.grosor - e.radio && distCentro <= radioArena) {
-                    const anguloEsfera = Math.atan2(e.y - centroY, e.x - centroX);
-                    let difAng = anguloEsfera - jugador.angulo;
-                    while (difAng < -Math.PI) difAng += Math.PI * 2;
-                    while (difAng > Math.PI) difAng -= Math.PI * 2;
-
-                    if (Math.abs(difAng) <= jugador.anchoAngular / 2) {
-                        const normalX = Math.cos(anguloEsfera);
-                        const normalY = Math.sin(anguloEsfera);
-                        const productoEscalar = e.vx * normalX + e.vy * normalY;
-                        
-                        e.vx -= 2 * productoEscalar * normalX;
-                        e.vy -= 2 * productoEscalar * normalY;
-
-                        e.x = centroX + normalX * (radioArena - jugador.grosor - e.radio - 2);
-                        e.y = centroY + normalY * (radioArena - jugador.grosor - e.radio - 2);
-
-                        destelloFondo = 0.2;
-                        multiplicador += 0.1;
-                        score += Math.floor(10 * multiplicador);
-                        
-                        crearExplosion(e.x, e.y, '#00ff66', 6);
-                        hudScore.textContent = "NET_SCORE: " + String(score).padStart(4, '0');
-                        hudMulti.textContent = "MULTIPLIER: x" + multiplicador.toFixed(1);
-                    }
-                }
-
-                // Destrucción en Núcleo Central
-                if (distCentro <= nucleo.radius + e.radio && (Math.abs(e.x - centroX) > 5 || Math.abs(e.y - centroY) > 5)) {
-                    crearExplosion(e.x, e.y, '#bd00ff', 12);
-                    esferas.splice(i, 1);
-                    score += Math.floor(25 * multiplicador);
-                    destelloFondo = 0.15;
-                    hudScore.textContent = "NET_SCORE: " + String(score).padStart(4, '0');
+                // Si se aleja demasiado al espacio profundo infinito, se elimina del sistema
+                if (distancia > Math.max(canvas.width, canvas.height) * 2) {
+                    planetas.splice(i, 1);
+                    txtPlanetas.textContent = planetas.length;
                     continue;
                 }
 
-                // GAME OVER
-                if (distCentro > radioArena + 40) {
-                    crearExplosion(e.x, e.y, '#ff0055', 20);
-                    finalizarOperacion();
-                    break;
+                // COLISIÓN TÉRMICA CONTRA EL SOL
+                if (distancia <= Sol.radio + p.radio) {
+                    crearLlamaradaSolar(p.x, p.y, '#ffea00');
+                    choquesSolares++;
+                    txtChoques.textContent = choquesSolares;
+                    planetas.splice(i, 1);
+                    txtPlanetas.textContent = planetas.length;
+                    continue;
                 }
+
+                // Ecuación Física: Fuerza de Newton F = G * (m1 * m2) / d^2
+                const fuerza = (G * Sol.masa * p.masa) / (distancia * distancia);
+                
+                // Aceleración generada
+                const ax = (fuerza * (dx / distancia)) / p.masa;
+                const ay = (fuerza * (dy / distancia)) / p.masa;
+
+                // Modificar velocidades espaciales por la gravedad
+                p.vx += ax;
+                p.vy += ay;
+
+                // Actualizar posiciones lineales
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Guardar historial para dibujar la órbita/estela gravitacional
+                p.estela.push({ x: p.x, y: p.y });
+                if (p.estela.length > 35) p.estela.shift();
+
+                // Dibujar Estela Cósmica
+                ctx.strokeStyle = p.color;
+                ctx.globalAlpha = 0.25;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                for (let j = 0; j < p.estela.length; j++) {
+                    if (j === 0) ctx.moveTo(p.estela[j].x, p.estela[j].y);
+                    else ctx.lineTo(p.estela[j].x, p.estela[j].y);
+                }
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+
+                // Dibujar Cuerpo Planetario
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radio, 0, Math.PI * 2);
+                ctx.fill();
             }
 
-            requestAnimationFrame(bucleMotor);
+            requestAnimationFrame(actualizarUniverso);
         }
 
-        function finalizarOperacion() {
-            juegoEnCurso = false;
-            menu.style.display = 'flex';
-            setTimeout(() => menu.style.opacity = '1', 10);
-            menu.querySelector('.titulo').innerHTML = "CONEXIÓN CAÍDA";
-            menu.querySelector('.subtitulo').innerHTML = `SCORE OBTENIDO: <span style="color:var(--neon-red); font-weight:bold;">${score}</span> // MULTI MAX: x${multiplicador.toFixed(1)}`;
-            menu.querySelector('.btn-play').textContent = "RECONECTAR NODO";
-        }
+        // Iniciar el motor astrofísico
+        requestAnimationFrame(actualizarUniverso);
     </script>
 </body>
 </html>
