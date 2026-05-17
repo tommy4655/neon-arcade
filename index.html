@@ -2,261 +2,328 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBER RUNNER // GLOBAL ARCADE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON PONG .IO // ARENA GLOBAL</title>
     <style>
         :root {
             --neon-blue: #00e5ff;
             --neon-purple: #bd00ff;
-            --dark-bg: #03080e;
+            --neon-green: #00ff66;
+            --neon-red: #ff0055;
+            --dark-bg: #02060c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none;
         }
 
         body {
             background-color: var(--dark-bg);
             color: #ffffff;
-            font-family: 'Courier New', Courier, monospace;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             overflow: hidden;
-            user-select: none;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        #contenedor-juego {
+        #interfaz-juego {
             position: relative;
-            border: 2px solid var(--neon-blue);
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
-            background: rgba(6, 18, 30, 0.9);
-            border-radius: 8px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         canvas {
-            display: block;
-            background: #040d1a;
-        }
-
-        #UI-Puntaje {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--neon-blue);
-            text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
-        }
-
-        #UI-Record {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--neon-purple);
-            text-shadow: 0 0 8px rgba(189, 0, 255, 0.6);
-        }
-
-        #pantalla-inicio {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(3, 8, 14, 0.85);
-            border-radius: 8px;
-            transition: opacity 0.3s;
+            background: radial-gradient(circle, #051329 0%, #02060c 100%);
         }
 
-        .btn-arcade {
+        .marcador-global {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-family: monospace;
+            font-size: 16px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+            pointer-events: none;
+        }
+
+        #pantalla-menu {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 6, 12, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+
+        .titulo {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 15px var(--neon-purple);
+        }
+
+        .titulo span {
+            color: var(--neon-blue);
+            text-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .btn-play {
             background: transparent;
             border: 2px solid var(--neon-blue);
             color: var(--neon-blue);
-            padding: 12px 30px;
-            font-size: 20px;
-            font-family: inherit;
+            padding: 15px 40px;
+            font-size: 18px;
             font-weight: bold;
+            letter-spacing: 2px;
             cursor: pointer;
-            border-radius: 5px;
-            text-shadow: 0 0 8px var(--neon-blue);
-            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
-            transition: all 0.2s;
+            border-radius: 50px;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+            transition: all 0.2s ease;
         }
 
-        .btn-arcade:hover {
+        .btn-play:hover, .btn-play:active {
             background: var(--neon-blue);
             color: var(--dark-bg);
-            box-shadow: 0 0 20px var(--neon-blue);
+            box-shadow: 0 0 25px var(--neon-blue);
         }
     </style>
 </head>
 <body>
 
-    <div id="contenedor-juego">
-        <div id="UI-Puntaje">SCORE: 00000</div>
-        <div id="UI-Record">GLOBAL BEST: 00000</div>
+    <div id="interfaz-juego">
+        <div class="marcador-global" id="hud-score">PUNTOS: 0000</div>
         
-        <canvas id="canvasJuego" width="800" height="300"></canvas>
+        <canvas id="arenaCanvas"></canvas>
 
-        <div id="pantalla-inicio">
-            <h1 style="color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 20px;">CYBER RUNNER</h1>
-            <button class="btn-arcade" onclick="iniciarJuego()">INICIAR OPERACIÓN</button>
-            <p style="font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 15px;">[ ESPACIO / CLICK PARA SALTAR ]</p>
+        <div id="pantalla-menu">
+            <h1 class="titulo">NEON PONG<span>.IO</span></h1>
+            <button class="btn-play" onclick="arrancarServidor()">ENTRAR A LA ARENA</button>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('canvasJuego');
+        const canvas = document.getElementById('arenaCanvas');
         const ctx = canvas.getContext('2d');
-        const UI_Puntaje = document.getElementById('UI-Puntaje');
-        const pantallaInicio = document.getElementById('pantalla-inicio');
+        const menu = document.getElementById('pantalla-menu');
+        const hudScore = document.getElementById('hud-score');
 
-        let juegoActivo = false;
+        let juegoEnCurso = false;
         let score = 0;
-        let velocidadMundo = 6;
+        let centroX, centroY, radioArena;
 
-        // Configuración del personaje (El "Hacker" o Cyber-T-Rex)
+        // Propiedades del Jugador (Barra defensiva circular)
         const jugador = {
-            x: 50,
-            y: 200,
-            ancho: 40,
-            alto: 50,
-            gravedad: 0.6,
-            velocidadY: 0,
-            fuerzaSalto: -12,
-            enElSuelo: false,
-            color: '#bd00ff'
+            angulo: 0, // Posición angular en radianes alrededor del círculo
+            anchoAngular: 0.4, // Extensión de la barra (tamaño)
+            grosor: 12,
+            color: '#00ff66',
+            targetAngulo: 0
         };
 
-        // Obstáculos (Los firewalls o virus de la red)
-        let obstaculos = [];
+        // El núcleo central del virus y las esferas
+        const nucleo = { radius: 35, color: '#bd00ff' };
+        let esferas = [];
+        let intervaloGeneracion = 120;
+        let contadorFotogramas = 0;
 
-        function iniciarJuego() {
-            pantallaInicio.style.opacity = '0';
-            setTimeout(() => pantallaInicio.style.display = 'none', 300);
+        function ajustarDimensiones() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            centroX = canvas.width / 2;
+            centroY = canvas.height / 2;
+            // Definimos el radio de la arena según la pantalla del móvil para que entre perfecto
+            radioArena = Math.min(canvas.width, canvas.height) * 0.42;
+        }
+
+        window.addEventListener('resize', ajustarDimensiones);
+        ajustarDimensiones();
+
+        function arrancarServidor() {
+            menu.style.opacity = '0';
+            setTimeout(() => menu.style.display = 'none', 300);
             
-            // Reiniciar variables
-            juegoActivo = true;
+            juegoEnCurso = true;
             score = 0;
-            velocidadMundo = 6;
-            obstaculos = [];
-            jugador.y = 200;
-            jugador.velocidadY = 0;
+            esferas = [];
+            contadorFotogramas = 0;
+            intervaloGeneracion = 120;
+            hudScore.textContent = "PUNTOS: 0000";
             
-            buclePrincipal();
+            bucleMotor();
         }
 
-        // Detectar Saltos (Teclado y Pantalla Táctil)
-        window.addEventListener('keydown', (e) => {
-            if ((e.key === ' ' || e.key === 'ArrowUp') && jugador.enElSuelo && juegoActivo) {
-                saltar();
-            }
+        // Control táctil suave y absoluto por arrastre (Drag) en cualquier parte de la pantalla
+        window.addEventListener('touchmove', (e) => {
+            if (!juegoEnCurso) return;
+            const touch = e.touches[0];
+            calcularControl(touch.clientX, touch.clientY);
         });
 
-        canvas.addEventListener('touchstart', () => {
-            if (jugador.enElSuelo && juegoActivo) saltar();
-        });
-        canvas.addEventListener('mousedown', () => {
-            if (jugador.enElSuelo && juegoActivo) saltar();
+        window.addEventListener('mousemove', (e) => {
+            if (!juegoEnCurso) return;
+            calcularControl(e.clientX, e.clientY);
         });
 
-        function saltar() {
-            jugador.velocidadY = jugador.fuerzaSalto;
-            jugador.enElSuelo = false;
+        function calcularControl(clientX, clientY) {
+            // Calcula el ángulo matemático desde el centro de la pantalla hacia el dedo del usuario
+            const dx = clientX - centroX;
+            const dy = clientY - centroY;
+            jugador.targetAngulo = Math.atan2(dy, dx);
         }
 
-        function generarObstaculos() {
-            if (obstaculos.length === 0 || obstaculos[obstaculos.length - 1].x < canvas.width - Math.random() * 300 - 200) {
-                let altoObstaculo = Math.random() * 40 + 20;
-                obstaculos.push({
-                    x: canvas.width,
-                    y: canvas.height - altoObstaculo - 20, // Línea de suelo
-                    ancho: 20,
-                    alto: altoObstaculo,
-                    color: '#00e5ff'
-                });
-            }
+        function inyectarEsfera() {
+            const anguloDireccion = Math.random() * Math.PI * 2;
+            const velocidadBase = 3 + (score / 500); // Sube la velocidad gradualmente según los puntos
+            esferas.push({
+                x: centroX,
+                y: centroY,
+                vx: Math.cos(anguloDireccion) * velocidadBase,
+                vy: Math.sin(anguloDireccion) * velocidadBase,
+                radio: 7,
+                color: '#00e5ff'
+            });
         }
 
-        function buclePrincipal() {
-            if (!juegoActivo) return;
+        function bucleMotor() {
+            if (!juegoEnCurso) return;
 
-            // 1. LIMPIAR PANTALLA
+            // 1. Limpieza de interfaz
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 2. DIBUJAR LÍNEA DE TIERRA (Ciber-Red)
-            ctx.strokeStyle = 'rgba(0, 229, 255, 0.2)';
+            // 2. Dibujar fondo de rejilla táctica (Arena circular)
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.08)';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(0, canvas.height - 20);
-            ctx.lineTo(canvas.width, canvas.height - 20);
+            ctx.arc(centroX, centroY, radioArena, 0, Math.PI * 2);
             ctx.stroke();
 
-            // 3. ACTUALIZAR JUGADOR (Física de salto)
-            jugador.velocidadY += jugador.gravedad;
-            jugador.y += jugador.velocidadY;
+            // Interpolar posición del jugador para un movimiento fluido y no tosco
+            let diferenciaAngulo = jugador.targetAngulo - jugador.angulo;
+            while (diferenciaAngulo < -Math.PI) diferenciaAngulo += Math.PI * 2;
+            while (diferenciaAngulo > Math.PI) diferenciaAngulo -= Math.PI * 2;
+            jugador.angulo += diferenciaAngulo * 0.3; // Suavizado de respuesta táctil
 
-            // Restricción del suelo
-            if (jugador.y >= canvas.height - jugador.alto - 20) {
-                jugador.y = canvas.height - jugador.alto - 20;
-                jugador.velocidadY = 0;
-                jugador.enElSuelo = true;
-            }
-
-            // Dibujar Jugador con brillo de neón
-            ctx.fillStyle = jugador.color;
-            ctx.shadowBlur = 10;
+            // 3. Dibujar barra del Jugador (Arco de circunferencia)
+            ctx.strokeStyle = jugador.color;
+            ctx.lineWidth = jugador.grosor;
+            ctx.lineCap = 'round';
+            ctx.shadowBlur = 12;
             ctx.shadowColor = jugador.color;
-            ctx.fillRect(jugador.x, jugador.y, jugador.ancho, jugador.alto);
+            ctx.beginPath();
+            ctx.arc(
+                centroX, 
+                centroY, 
+                radioArena - jugador.grosor / 2, 
+                jugador.angulo - jugador.anchoAngular / 2, 
+                jugador.angulo + jugador.anchoAngular / 2
+            );
+            ctx.stroke();
 
-            // 4. ACTUALIZAR OBSTÁCULOS
-            generarObstaculos();
-            for (let i = obstaculos.length - 1; i >= 0; i--) {
-                let obs = obstaculos[i];
-                obs.x -= velocidadMundo;
+            // 4. Dibujar Núcleo del Sistema
+            ctx.fillStyle = nucleo.color;
+            ctx.shadowColor = nucleo.color;
+            ctx.beginPath();
+            ctx.arc(centroX, centroY, nucleo.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset de sombras para óptimo rendimiento
 
-                // Dibujar Obstáculo
-                ctx.fillStyle = obs.color;
-                ctx.shadowColor = obs.color;
-                ctx.fillRect(obs.x, obs.y, obs.ancho, obs.alto);
+            // 5. Gestión y física de esferas de datos
+            contadorFotogramas++;
+            if (contadorFotogramas % Math.max(30, intervaloGeneracion) === 0) {
+                inyectarEsfera();
+                if (intervaloGeneracion > 40) intervaloGeneracion -= 2; // Desafío incremental
+            }
 
-                // Detectar Colisión Real (Game Over)
-                if (
-                    jugador.x < obs.x + obs.ancho &&
-                    jugador.x + jugador.ancho > obs.x &&
-                    jugador.y < obs.y + obs.alto &&
-                    jugador.y + jugador.alto > obs.y
-                ) {
-                    gameOver();
+            for (let i = esferas.length - 1; i >= 0; i--) {
+                let e = esferas[i];
+                e.x += e.vx;
+                e.y += e.vy;
+
+                // Dibujar esfera
+                ctx.fillStyle = e.color;
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, e.radio, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Calcular distancia de la esfera al centro de la arena
+                const distCentro = Math.hypot(e.x - centroX, e.y - centroY);
+
+                // COLISIÓN CON LA BARRA PERIFÉRICA
+                if (distCentro >= radioArena - jugador.grosor - e.radio && distCentro <= radioArena) {
+                    // Obtener el ángulo actual de la esfera respecto al centro
+                    const anguloEsfera = Math.atan2(e.y - centroY, e.x - centroX);
+                    
+                    // Verificar si el jugador se encuentra en ese cuadrante angular
+                    let difAng = anguloEsfera - jugador.angulo;
+                    while (difAng < -Math.PI) difAng += Math.PI * 2;
+                    while (difAng > Math.PI) difAng -= Math.PI * 2;
+
+                    if (Math.abs(difAng) <= jugador.anchoAngular / 2) {
+                        // Rebotar hacia el centro invirtiendo los vectores
+                        const normalX = Math.cos(anguloEsfera);
+                        const normalY = Math.sin(anguloEsfera);
+                        const productoEscalar = e.vx * normalX + e.vy * normalY;
+                        
+                        e.vx -= 2 * productoEscalar * normalX;
+                        e.vy -= 2 * productoEscalar * normalY;
+
+                        // Desplazar un poco para evitar dobles rebotes corruptos
+                        e.x = centroX + normalX * (radioArena - jugador.grosor - e.radio - 2);
+                        e.y = centroY + normalY * (radioArena - jugador.grosor - e.radio - 2);
+
+                        score += 10;
+                        hudScore.textContent = "PUNTOS: " + String(score).padStart(4, '0');
+                    }
                 }
 
-                // Eliminar del array si ya pasó la pantalla
-                if (obs.x + obs.ancho < 0) {
-                    obstaculos.splice(i, 1);
+                // COLISIÓN DE RETORNO CON EL NÚCLEO CENTRAL (Se destruye de forma segura)
+                if (distCentro <= nucleo.radius + e.radio && (Math.abs(e.x - centroX) > 5 || Math.abs(e.y - centroY) > 5)) {
+                    esferas.splice(i, 1);
+                    score += 25; // Bonus por devolver la esfera al núcleo
+                    hudScore.textContent = "PUNTOS: " + String(score).padStart(4, '0');
+                    continue;
+                }
+
+                // GAME OVER: La esfera escapó del radio de la arena de juego
+                if (distCentro > radioArena + 50) {
+                    finalizarOperacion();
+                    break;
                 }
             }
-            ctx.shadowBlur = 0; // Reset de sombras para optimizar
 
-            // 5. ACTUALIZAR PUNTAJE Y VELOCIDAD
-            score++;
-            UI_Puntaje.textContent = "SCORE: " + String(score).padStart(5, '0');
-            if (score % 500 === 0) velocidadMundo += 0.5; // Aumentar velocidad paulatinamente
-
-            requestAnimationFrame(buclePrincipal);
+            requestAnimationFrame(bucleMotor);
         }
 
-        function gameOver() {
-            juegoActivo = false;
-            pantallaInicio.style.display = 'flex';
-            pantallaInicio.style.opacity = '1';
-            pantallaInicio.querySelector('h1').textContent = "CONEXIÓN CAÍDA";
-            pantallaInicio.querySelector('.btn-arcade').textContent = "REINTENTAR MATRIZ";
+        function finalizarOperacion() {
+            juegoEnCurso = false;
+            menu.style.display = 'flex';
+            setTimeout(() => menu.style.opacity = '1', 10);
+            menu.querySelector('.titulo').innerHTML = "CONEXIÓN INTERCEPTADA<br><span style='font-size:20px; text-shadow:0 0 10px #ff0055; color:#ff0055;'>SCORE FINAL: " + score + "</span>";
+            menu.querySelector('.btn-play').textContent = "REINTEGRAR ARENA";
         }
     </script>
 </body>
