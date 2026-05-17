@@ -3,47 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>El Bosque de Mamá</title>
+    <title>La Casa de Mamá - Código Puro</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
-        body, html { width: 100%; height: 100%; background: #050b08; font-family: 'Courier New', Courier, monospace; }
+        body, html { width: 100%; height: 100%; background: #060b09; font-family: 'Courier New', Courier, monospace; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         
-        .frase-hud {
+        /* Cuadro táctico premium para las frases */
+        .hud-mensaje {
             position: absolute;
-            top: 25%;
+            top: 20%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(5, 15, 10, 0.85);
-            border: 1px solid rgba(42, 255, 150, 0.3);
-            border-top: 3px solid #2aff96;
-            padding: 12px 20px;
+            background: rgba(4, 12, 8, 0.9);
+            border: 1px solid rgba(42, 255, 150, 0.4);
+            border-left: 4px solid #2aff96;
+            padding: 14px 24px;
             color: #ffffff;
             font-size: 13px;
             font-weight: bold;
             text-align: center;
             pointer-events: none;
             z-index: 5;
-            box-shadow: 0 0 20px rgba(0,0,0,0.6);
+            box-shadow: 0 0 25px rgba(0,0,0,0.8);
             white-space: nowrap;
             opacity: 0;
-            transition: opacity 0.8s ease, transform 0.8s ease;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .hud-mensaje span {
+            display: block;
+            font-size: 9px;
+            color: #2aff96;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 2px;
         }
     </style>
 </head>
 <body>
 
-    <div id="fraseDOM" class="frase-hud">TE AMO MAMÁ</div>
-    <canvas id="landscapeCanvas"></canvas>
+    <div id="mensajeHUD" class="hud-mensaje"><span>SISTEMA_AFECTIVO</span>TE AMO MAMÁ</div>
+    <canvas id="mainCanvas"></canvas>
 
     <script>
-        const canvas = document.getElementById('landscapeCanvas');
+        const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
-        const fraseDOM = document.getElementById('fraseDOM');
+        const mensajeHUD = document.getElementById('mensajeHUD');
 
         let w, h, cX, cY;
         let fragmentos = [];
-        let luciernagas = [];
+        let humoChimenea = [];
         const textoIntro = "BIENVENIDO";
         
         let faseSistema = "INTRO"; 
@@ -52,8 +62,8 @@
         const frases = [
             "TE AMO MAMÁ",
             "SOS MI LUGAR SEGURO EN EL MUNDO",
-            "GRACIAS POR TU PACIENCIA Y AMOR",
-            "SOS EL MOTOR DE MI UNIVERSO"
+            "GRACIAS POR TU PACIENCIA Y AMOR INFINITO",
+            "ESTE CODIGO LO ADORNA TU SONREIR"
         ];
         let fraseIndex = 0;
 
@@ -61,7 +71,6 @@
             w = canvas.width = window.innerWidth;
             h = canvas.height = window.innerHeight;
             cX = w / 2; cY = h / 2;
-            if(faseSistema === "BOSQUE") generarAmbiente();
         }
         window.addEventListener('resize', resize);
         resize();
@@ -89,67 +98,148 @@
             }
         }
 
-        function generarAmbiente() {
-            luciernagas = [];
-            for(let i=0; i<40; i++) {
-                luciernagas.push({
-                    x: Math.random() * w,
-                    y: Math.random() * h,
-                    r: Math.random() * 1.5 + 1,
-                    speedY: -(Math.random() * 0.4 + 0.1),
-                    speedX: Math.sin(Math.random() * 2) * 0.2,
-                    seed: Math.random() * 100
-                });
-            }
-        }
-
-        function cicloFrases() {
-            fraseDOM.style.opacity = "0";
-            fraseDOM.style.transform = "translate(-50%, -60%)";
+        function cambiarFrase() {
+            mensajeHUD.style.opacity = "0";
+            mensajeHUD.style.transform = "translate(-50%, -60%)";
             
             setTimeout(() => {
-                fraseDOM.innerText = frases[fraseIndex];
-                fraseDOM.style.opacity = "1";
-                fraseDOM.style.transform = "translate(-50%, -50%)";
+                mensajeHUD.innerHTML = `<span>MATRIZ_MAMÁ // OPT_MAMÁ</span>${frases[fraseIndex]}`;
+                mensajeHUD.style.opacity = "1";
+                mensajeHUD.style.transform = "translate(-50%, -50%)";
                 fraseIndex = (fraseIndex + 1) % frases.length;
-            }, 800);
+            }, 600);
         }
 
-        // Dibuja una capa de montañas/colinas con pinos matemáticos
-        function dibujarColina(color, alturaBase, multiplicadorOnda, semillaTiempo, densidadPinos) {
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(0, h);
-            
-            for (let x = 0; x <= w; x += 10) {
-                // Función Seno compuesta para simular las lomas orgánicas de tu foto
-                let y = alturaBase + Math.sin(x * 0.004 + semillaTiempo) * multiplicadorOnda 
-                          + Math.sin(x * 0.01 + semillaTiempo * 2) * (multiplicadorOnda * 0.3);
-                ctx.lineTo(x, y);
-            }
-            ctx.lineTo(w, h);
-            ctx.fill();
+        // DIBUJO VECTORIAL MATEMÁTICO DE LA CASA DE LA FOTO
+        function dibujarCasaRender(x, y, escala) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(escala, escala);
 
-            // Dibujar los pinos abstractos encima de la colina
-            ctx.strokeStyle = color;
-            for (let x = 10; x < w; x += densidadPinos) {
-                let yBase = alturaBase + Math.sin(x * 0.004 + semillaTiempo) * multiplicadorOnda 
-                              + Math.sin(x * 0.01 + semillaTiempo * 2) * (multiplicadorOnda * 0.3);
-                
-                // Geometría vectorial del pino
-                ctx.lineWidth = Math.random() * 2 + 1;
+            // 1. Cimiento / Base de piedra gris inferior
+            ctx.fillStyle = "#4a5350";
+            ctx.fillRect(-60, 35, 120, 15);
+            ctx.strokeStyle = "#2f3533";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-60, 35, 120, 15);
+
+            // 2. Estructura principal de dos pisos (Paredes Blancas)
+            ctx.fillStyle = "#f4f7f5";
+            ctx.fillRect(-55, -25, 110, 60);
+            ctx.strokeStyle = "#cbd1ce";
+            ctx.strokeRect(-55, -25, 110, 60);
+
+            // 3. Techo principal oscuro inclinado (A dos aguas)
+            ctx.fillStyle = "#1e2422";
+            ctx.beginPath();
+            ctx.moveTo(-62, -25);
+            ctx.lineTo(0, -60);
+            ctx.lineTo(62, -25);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 4. Chimenea lateral (Origen de las partículas de energía)
+            ctx.fillStyle = "#3a423f";
+            ctx.fillRect(40, -52, 10, 20);
+
+            // 5. Las 2 Buhardillas superiores en el techo (Estructuras de ventanas del techo)
+            function dibujarBuhardilla(posX) {
+                ctx.fillStyle = "#f4f7f5";
                 ctx.beginPath();
-                ctx.moveTo(x, yBase);
-                ctx.lineTo(x, yBase - (Math.random() * 15 + 10)); // Altura del árbol
+                ctx.moveTo(posX - 12, -25);
+                ctx.lineTo(posX, -42);
+                ctx.lineTo(posX + 12, -25);
+                ctx.closePath();
+                ctx.fill();
                 ctx.stroke();
+                
+                // Mini ventana de la buhardilla
+                ctx.fillStyle = "#121a16";
+                ctx.fillRect(posX - 5, -32, 10, 7);
             }
+            dibujarBuhardilla(-25);
+            dibujarBuhardilla(25);
+
+            // 6. Ventanas cuadriculadas del Segundo Piso
+            ctx.fillStyle = "#0f1c15"; // Fondo oscuro de cristal
+            ctx.strokeStyle = "#cbd1ce"; // Marcos blancos
+            ctx.lineWidth = 1;
+            
+            let ventanasPiso2 = [-40, -15, 15, 40];
+            ventanasPiso2.forEach(vX => {
+                ctx.fillRect(vX - 7, -15, 14, 16);
+                ctx.strokeRect(vX - 7, -15, 14, 16);
+                // Línea de cruz interna del marco
+                ctx.beginPath();
+                ctx.moveTo(vX, -15); ctx.lineTo(vX, 1);
+                ctx.moveTo(vX - 7, -7); ctx.lineTo(vX + 7, -7);
+                ctx.stroke();
+            });
+
+            // 7. Puerta central y Ventanas del Primer Piso
+            ctx.fillStyle = "#261611"; // Puerta de madera marrón oscura
+            ctx.fillRect(-8, 15, 16, 20);
+            ctx.strokeRect(-8, 15, 16, 20);
+
+            let ventanasPiso1 = [-42, -22, 22, 42];
+            ctx.fillStyle = "#0f1c15";
+            ventanasPiso1.forEach(vX => {
+                ctx.fillRect(vX - 8, 12, 16, 16);
+                ctx.strokeRect(vX - 8, 12, 16, 16);
+                ctx.beginPath();
+                ctx.moveTo(vX, 12); ctx.lineTo(vX, 28);
+                ctx.moveTo(vX - 8, 20); ctx.lineTo(vX + 8, 20);
+                ctx.stroke();
+            });
+
+            ctx.restore();
+        }
+
+        function gestionarParticulasHumo(cabañaX, cabañaY, escala) {
+            // Coordenada exacta de salida de la chimenea calculada dinámicamente
+            let chimeneaX = cabañaX + (45 * escala);
+            let chimeneaY = cabañaY - (52 * escala);
+
+            if (humoChimenea.length < 50) {
+                humoChimenea.push({
+                    x: chimeneaX,
+                    y: chimeneaY,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: -(Math.random() * 0.6 + 0.4),
+                    size: Math.random() * 3 + 2,
+                    alpha: 1.0,
+                    decay: Math.random() * 0.01 + 0.005
+                });
+            }
+
+            ctx.save();
+            for (let i = humoChimenea.length - 1; i >= 0; i--) {
+                let p = humoChimenea[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+
+                if (p.alpha <= 0) {
+                    humoChimenea.splice(i, 1);
+                    continue;
+                }
+
+                // Partículas verde esmeralda neón flotando hacia arriba
+                ctx.fillStyle = `rgba(42, 255, 150, ${p.alpha * 0.45})`;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = '#2aff96';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * (2 - p.alpha), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
         }
 
         function render() {
-            if (faseSistema === "INTRO" || faseSistema === "ESPERA_INTRO") {
-                ctx.fillStyle = 'rgba(3, 8, 6, 0.25)';
-                ctx.fillRect(0, 0, w, h);
-            }
+            // Fondo oscuro con leve rastro estético
+            ctx.fillStyle = 'rgba(6, 11, 9, 0.25)';
+            ctx.fillRect(0, 0, w, h);
 
             if (faseSistema === "INTRO") {
                 let listos = true;
@@ -186,65 +276,37 @@
                 ctx.restore();
 
                 if (Date.now() - tiempoControl > 1500) {
-                    faseSistema = "BOSQUE";
-                    generarAmbiente();
-                    cicloFrases();
-                    setInterval(cicloFrases, 4000);
+                    faseSistema = "CASA_ACTIVA";
+                    cambiarFrase();
+                    setInterval(cambiarFrase, 4000);
                 }
 
-            } else if (faseSistema === "BOSQUE") {
-                // Render del paisaje matemático de la imagen
-                // Cielo degradado oscuro de montaña
-                let cielo = ctx.createLinearGradient(0, 0, 0, h);
-                cielo.addColorStop(0, '#040d08');
-                cielo.addColorStop(1, '#0b2416');
-                ctx.fillStyle = cielo;
-                ctx.fillRect(0, 0, w, h);
+            } else if (faseSistema === "CASA_ACTIVA") {
+                // Dibujamos las colinas matemáticas de fondo sutiles para darle el contexto de pradera de la imagen
+                let t = Date.now() * 0.0004;
+                ctx.fillStyle = "#040806";
+                ctx.beginPath(); ctx.moveTo(0, h);
+                for(let x=0; x<=w; x+=20){
+                    ctx.lineTo(x, h*0.75 + Math.sin(x*0.005 + t)*10);
+                }
+                ctx.lineTo(w, h); ctx.fill();
 
-                let t = Date.now() * 0.0003;
+                // Escala adaptativa para que entre perfecto en pantallas de teléfonos móviles
+                let escalaCasa = w < 400 ? 1.8 : 2.4;
+                let casaY = h * 0.62;
 
-                // Capa 1: Montañas lejanas y brumosas (Verde azulado muy oscuro)
-                dibujarColina('#081a10', h * 0.55, 30, t, 35);
+                // Llamada al motor de partículas de la chimenea
+                gestionarParticulasHumo(cX, casaY, escalaCasa);
 
-                // Capa 2: Bosque medio (El color de los pinos densos de tu foto)
-                dibujarColina('#0c2b1a', h * 0.65, 20, t * 1.5, 20);
-
-                // Capa 3: Pradera del frente (Verde claro texturizado)
-                dibujarColina('#144027', h * 0.78, 15, t * 2, 12);
-
-                // La Cabaña geométrica central (Fiel al paisaje)
-                let cabañaX = cX - 20;
-                let cabañaY = h * 0.76 + Math.sin(cabañaX * 0.004 + t * 2) * 15; // Anclada a la oscilación de la colina
-                
-                ctx.fillStyle = '#050f0a'; // Paredes
-                ctx.fillRect(cabañaX, cabañaY, 30, 18);
-                ctx.fillStyle = '#020503'; // Techo inclinado
-                ctx.beginPath();
-                ctx.moveTo(cabañaX - 4, cabañaY);
-                ctx.lineTo(cabañaX + 15, cabañaY - 10);
-                ctx.lineTo(cabañaX + 34, cabañaY);
-                ctx.fill();
-
-                // Luciérnagas / Clima flotante doradas
-                ctx.save();
-                luciernagas.forEach(l => {
-                    l.y += l.speedY;
-                    l.x += Math.sin(t * 5 + l.seed) * 0.3;
-                    if (l.y < 0) l.y = h;
-
-                    ctx.fillStyle = `rgba(180, 255, 150, ${0.3 + Math.sin(t * 10 + l.seed) * 0.4})`;
-                    ctx.beginPath();
-                    ctx.arc(l.x, l.y, l.r, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-                ctx.restore();
+                // Renderizado en tiempo real de la cabaña blanca
+                dibujarCasaRender(cX, casaY, escalaCasa);
             }
 
             requestAnimationFrame(render);
         }
 
         inicializarIntro();
-        setTimeout(render, 300);
+        setTimeout(render, 200);
     </script>
 </body>
 </html>
