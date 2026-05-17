@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER RUNNER // GLOBAL ARCADE</title>
+    <style>
+        :root {
+            --neon-blue: #00e5ff;
+            --neon-purple: #bd00ff;
+            --dark-bg: #03080e;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #contenedor-juego {
+            position: relative;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+            background: rgba(6, 18, 30, 0.9);
+            border-radius: 8px;
+        }
+
+        canvas {
+            display: block;
+            background: #040d1a;
+        }
+
+        #UI-Puntaje {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--neon-blue);
+            text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+        }
+
+        #UI-Record {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--neon-purple);
+            text-shadow: 0 0 8px rgba(189, 0, 255, 0.6);
+        }
+
+        #pantalla-inicio {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(3, 8, 14, 0.85);
+            border-radius: 8px;
+            transition: opacity 0.3s;
+        }
+
+        .btn-arcade {
+            background: transparent;
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 12px 30px;
+            font-size: 20px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            text-shadow: 0 0 8px var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+            transition: all 0.2s;
+        }
+
+        .btn-arcade:hover {
+            background: var(--neon-blue);
+            color: var(--dark-bg);
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="contenedor-juego">
+        <div id="UI-Puntaje">SCORE: 00000</div>
+        <div id="UI-Record">GLOBAL BEST: 00000</div>
+        
+        <canvas id="canvasJuego" width="800" height="300"></canvas>
+
+        <div id="pantalla-inicio">
+            <h1 style="color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 20px;">CYBER RUNNER</h1>
+            <button class="btn-arcade" onclick="iniciarJuego()">INICIAR OPERACIÓN</button>
+            <p style="font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 15px;">[ ESPACIO / CLICK PARA SALTAR ]</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvasJuego');
+        const ctx = canvas.getContext('2d');
+        const UI_Puntaje = document.getElementById('UI-Puntaje');
+        const pantallaInicio = document.getElementById('pantalla-inicio');
+
+        let juegoActivo = false;
+        let score = 0;
+        let velocidadMundo = 6;
+
+        // Configuración del personaje (El "Hacker" o Cyber-T-Rex)
+        const jugador = {
+            x: 50,
+            y: 200,
+            ancho: 40,
+            alto: 50,
+            gravedad: 0.6,
+            velocidadY: 0,
+            fuerzaSalto: -12,
+            enElSuelo: false,
+            color: '#bd00ff'
+        };
+
+        // Obstáculos (Los firewalls o virus de la red)
+        let obstaculos = [];
+
+        function iniciarJuego() {
+            pantallaInicio.style.opacity = '0';
+            setTimeout(() => pantallaInicio.style.display = 'none', 300);
+            
+            // Reiniciar variables
+            juegoActivo = true;
+            score = 0;
+            velocidadMundo = 6;
+            obstaculos = [];
+            jugador.y = 200;
+            jugador.velocidadY = 0;
+            
+            buclePrincipal();
+        }
+
+        // Detectar Saltos (Teclado y Pantalla Táctil)
+        window.addEventListener('keydown', (e) => {
+            if ((e.key === ' ' || e.key === 'ArrowUp') && jugador.enElSuelo && juegoActivo) {
+                saltar();
+            }
+        });
+
+        canvas.addEventListener('touchstart', () => {
+            if (jugador.enElSuelo && juegoActivo) saltar();
+        });
+        canvas.addEventListener('mousedown', () => {
+            if (jugador.enElSuelo && juegoActivo) saltar();
+        });
+
+        function saltar() {
+            jugador.velocidadY = jugador.fuerzaSalto;
+            jugador.enElSuelo = false;
+        }
+
+        function generarObstaculos() {
+            if (obstaculos.length === 0 || obstaculos[obstaculos.length - 1].x < canvas.width - Math.random() * 300 - 200) {
+                let altoObstaculo = Math.random() * 40 + 20;
+                obstaculos.push({
+                    x: canvas.width,
+                    y: canvas.height - altoObstaculo - 20, // Línea de suelo
+                    ancho: 20,
+                    alto: altoObstaculo,
+                    color: '#00e5ff'
+                });
+            }
+        }
+
+        function buclePrincipal() {
+            if (!juegoActivo) return;
+
+            // 1. LIMPIAR PANTALLA
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 2. DIBUJAR LÍNEA DE TIERRA (Ciber-Red)
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 20);
+            ctx.lineTo(canvas.width, canvas.height - 20);
+            ctx.stroke();
+
+            // 3. ACTUALIZAR JUGADOR (Física de salto)
+            jugador.velocidadY += jugador.gravedad;
+            jugador.y += jugador.velocidadY;
+
+            // Restricción del suelo
+            if (jugador.y >= canvas.height - jugador.alto - 20) {
+                jugador.y = canvas.height - jugador.alto - 20;
+                jugador.velocidadY = 0;
+                jugador.enElSuelo = true;
+            }
+
+            // Dibujar Jugador con brillo de neón
+            ctx.fillStyle = jugador.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = jugador.color;
+            ctx.fillRect(jugador.x, jugador.y, jugador.ancho, jugador.alto);
+
+            // 4. ACTUALIZAR OBSTÁCULOS
+            generarObstaculos();
+            for (let i = obstaculos.length - 1; i >= 0; i--) {
+                let obs = obstaculos[i];
+                obs.x -= velocidadMundo;
+
+                // Dibujar Obstáculo
+                ctx.fillStyle = obs.color;
+                ctx.shadowColor = obs.color;
+                ctx.fillRect(obs.x, obs.y, obs.ancho, obs.alto);
+
+                // Detectar Colisión Real (Game Over)
+                if (
+                    jugador.x < obs.x + obs.ancho &&
+                    jugador.x + jugador.ancho > obs.x &&
+                    jugador.y < obs.y + obs.alto &&
+                    jugador.y + jugador.alto > obs.y
+                ) {
+                    gameOver();
+                }
+
+                // Eliminar del array si ya pasó la pantalla
+                if (obs.x + obs.ancho < 0) {
+                    obstaculos.splice(i, 1);
+                }
+            }
+            ctx.shadowBlur = 0; // Reset de sombras para optimizar
+
+            // 5. ACTUALIZAR PUNTAJE Y VELOCIDAD
+            score++;
+            UI_Puntaje.textContent = "SCORE: " + String(score).padStart(5, '0');
+            if (score % 500 === 0) velocidadMundo += 0.5; // Aumentar velocidad paulatinamente
+
+            requestAnimationFrame(buclePrincipal);
+        }
+
+        function gameOver() {
+            juegoActivo = false;
+            pantallaInicio.style.display = 'flex';
+            pantallaInicio.style.opacity = '1';
+            pantallaInicio.querySelector('h1').textContent = "CONEXIÓN CAÍDA";
+            pantallaInicio.querySelector('.btn-arcade').textContent = "REINTENTAR MATRIZ";
+        }
+    </script>
+</body>
+</html>
