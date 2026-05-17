@@ -3,67 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Casa de Mamá - Código Puro</title>
+    <title>ROBOT_MOM v1.0</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
-        body, html { width: 100%; height: 100%; background: #060b09; font-family: 'Courier New', Courier, monospace; }
+        body, html { width: 100%; height: 100%; background: #050811; font-family: 'Courier New', Courier, monospace; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         
-        /* Cuadro táctico premium para las frases */
-        .hud-mensaje {
+        /* Consola de datos del robot */
+        .console-hud {
             position: absolute;
-            top: 20%;
+            bottom: 8%;
             left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(4, 12, 8, 0.9);
-            border: 1px solid rgba(42, 255, 150, 0.4);
-            border-left: 4px solid #2aff96;
-            padding: 14px 24px;
+            transform: translateX(-50%);
+            background: rgba(5, 12, 26, 0.9);
+            border: 1px solid rgba(0, 200, 255, 0.4);
+            border-bottom: 3px solid #00c8ff;
+            padding: 12px 20px;
             color: #ffffff;
-            font-size: 13px;
-            font-weight: bold;
-            text-align: center;
-            pointer-events: none;
+            font-size: 11px;
             z-index: 5;
-            box-shadow: 0 0 25px rgba(0,0,0,0.8);
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.6s ease, transform 0.6s ease;
+            box-shadow: 0 0 20px rgba(0,200,255,0.2);
+            width: 85%;
+            max-width: 340px;
         }
-        .hud-mensaje span {
-            display: block;
-            font-size: 9px;
-            color: #2aff96;
-            letter-spacing: 2px;
-            margin-bottom: 4px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 2px;
-        }
+        .console-hud .status { color: #00c8ff; font-weight: bold; margin-bottom: 4px; }
+        .console-hud .output { color: #fff; font-weight: bold; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <div id="mensajeHUD" class="hud-mensaje"><span>SISTEMA_AFECTIVO</span>TE AMO MAMÁ</div>
-    <canvas id="mainCanvas"></canvas>
+    <div class="console-hud">
+        <div class="status">🤖 ROVER_SYSTEM: ONLINE // ESCANEANDO...</div>
+        <div id="robotOutput" class="output">> INICIALIZANDO LOGS</div>
+    </div>
+    
+    <canvas id="robotCanvas"></canvas>
 
     <script>
-        const canvas = document.getElementById('mainCanvas');
+        const canvas = document.getElementById('robotCanvas');
         const ctx = canvas.getContext('2d');
-        const mensajeHUD = document.getElementById('mensajeHUD');
+        const robotOutput = document.getElementById('robotOutput');
 
         let w, h, cX, cY;
-        let fragmentos = [];
-        let humoChimenea = [];
-        const textoIntro = "BIENVENIDO";
-        
-        let faseSistema = "INTRO"; 
+        let fase = "INTRO";
         let tiempoControl = 0;
+        let fragmentos = [];
+        const textoIntro = "ROBOT_MOM";
 
-        const frases = [
-            "TE AMO MAMÁ",
-            "SOS MI LUGAR SEGURO EN EL MUNDO",
-            "GRACIAS POR TU PACIENCIA Y AMOR INFINITO",
-            "ESTE CODIGO LO ADORNA TU SONREIR"
+        const mensajesRobot = [
+            "TRANSMISIÓN: TE AMO MUCHO MAMÁ",
+            "DATOS: SOS EL MOTOR DE MI CÓDIGO",
+            "ALERTA: EXCESO DE AMOR DETECTADO",
+            "OBJETIVO: HACERTE SONREÍR HOY"
         ];
         let fraseIndex = 0;
 
@@ -77,7 +68,7 @@
 
         function inicializarIntro() {
             fragmentos = [];
-            ctx.font = "bold 44px sans-serif";
+            ctx.font = "bold 40px monospace";
             const anchoTotal = ctx.measureText(textoIntro).width;
             let startX = cX - anchoTotal / 2;
 
@@ -85,7 +76,7 @@
                 let letra = textoIntro[i];
                 let targetX = startX + ctx.measureText(textoIntro.substring(0, i)).width + ctx.measureText(letra).width / 2;
                 let angulo = Math.random() * Math.PI * 2;
-                let radio = Math.max(w, h) * 1.3;
+                let radio = Math.max(w, h) * 1.2;
 
                 fragmentos.push({
                     letra: letra,
@@ -98,150 +89,102 @@
             }
         }
 
-        function cambiarFrase() {
-            mensajeHUD.style.opacity = "0";
-            mensajeHUD.style.transform = "translate(-50%, -60%)";
-            
-            setTimeout(() => {
-                mensajeHUD.innerHTML = `<span>MATRIZ_MAMÁ // OPT_MAMÁ</span>${frases[fraseIndex]}`;
-                mensajeHUD.style.opacity = "1";
-                mensajeHUD.style.transform = "translate(-50%, -50%)";
-                fraseIndex = (fraseIndex + 1) % frases.length;
-            }, 600);
+        function actualizarConsola() {
+            robotOutput.innerText = `> ${mensajesRobot[fraseIndex]}`;
+            fraseIndex = (fraseIndex + 1) % mensajesRobot.length;
         }
 
-        // DIBUJO VECTORIAL MATEMÁTICO DE LA CASA DE LA FOTO
-        function dibujarCasaRender(x, y, escala) {
+        // MOTOR GRÁFICO DEL ROBOT
+        function dibujarRobot(x, y, tiempo) {
             ctx.save();
             ctx.translate(x, y);
-            ctx.scale(escala, escala);
 
-            // 1. Cimiento / Base de piedra gris inferior
-            ctx.fillStyle = "#4a5350";
-            ctx.fillRect(-60, 35, 120, 15);
-            ctx.strokeStyle = "#2f3533";
-            ctx.lineWidth = 1;
-            ctx.strokeRect(-60, 35, 120, 15);
+            // Efecto sutil de balanceo flotante por amortiguación
+            let bounce = Math.sin(tiempo * 0.005) * 3;
+            ctx.translate(0, bounce);
 
-            // 2. Estructura principal de dos pisos (Paredes Blancas)
-            ctx.fillStyle = "#f4f7f5";
-            ctx.fillRect(-55, -25, 110, 60);
-            ctx.strokeStyle = "#cbd1ce";
-            ctx.strokeRect(-55, -25, 110, 60);
+            // 1. LAS ORUGAS / LLANTAS (Base del Robot)
+            ctx.fillStyle = "#162238";
+            ctx.strokeStyle = "#3b5998";
+            ctx.lineWidth = 2;
+            ctx.fillRect(-50, 30, 100, 16);
+            ctx.strokeRect(-50, 30, 100, 16);
 
-            // 3. Techo principal oscuro inclinado (A dos aguas)
-            ctx.fillStyle = "#1e2422";
-            ctx.beginPath();
-            ctx.moveTo(-62, -25);
-            ctx.lineTo(0, -60);
-            ctx.lineTo(62, -25);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // 4. Chimenea lateral (Origen de las partículas de energía)
-            ctx.fillStyle = "#3a423f";
-            ctx.fillRect(40, -52, 10, 20);
-
-            // 5. Las 2 Buhardillas superiores en el techo (Estructuras de ventanas del techo)
-            function dibujarBuhardilla(posX) {
-                ctx.fillStyle = "#f4f7f5";
+            // Mini ruedas girando internamente
+            ctx.fillStyle = "#00c8ff";
+            let rX = Math.sin(tiempo * 0.01) * 4;
+            for(let offset = -40; offset <= 40; offset += 20) {
                 ctx.beginPath();
-                ctx.moveTo(posX - 12, -25);
-                ctx.lineTo(posX, -42);
-                ctx.lineTo(posX + 12, -25);
-                ctx.closePath();
+                ctx.arc(offset + rX, 38, 4, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.stroke();
-                
-                // Mini ventana de la buhardilla
-                ctx.fillStyle = "#121a16";
-                ctx.fillRect(posX - 5, -32, 10, 7);
             }
-            dibujarBuhardilla(-25);
-            dibujarBuhardilla(25);
 
-            // 6. Ventanas cuadriculadas del Segundo Piso
-            ctx.fillStyle = "#0f1c15"; // Fondo oscuro de cristal
-            ctx.strokeStyle = "#cbd1ce"; // Marcos blancos
-            ctx.lineWidth = 1;
+            // 2. CUERPO CENTRAL (Chasis metálico)
+            ctx.fillStyle = "#1e2e4a";
+            ctx.fillRect(-35, -15, 70, 45);
+            ctx.strokeRect(-35, -15, 70, 45);
             
-            let ventanasPiso2 = [-40, -15, 15, 40];
-            ventanasPiso2.forEach(vX => {
-                ctx.fillRect(vX - 7, -15, 14, 16);
-                ctx.strokeRect(vX - 7, -15, 14, 16);
-                // Línea de cruz interna del marco
-                ctx.beginPath();
-                ctx.moveTo(vX, -15); ctx.lineTo(vX, 1);
-                ctx.moveTo(vX - 7, -7); ctx.lineTo(vX + 7, -7);
-                ctx.stroke();
-            });
-
-            // 7. Puerta central y Ventanas del Primer Piso
-            ctx.fillStyle = "#261611"; // Puerta de madera marrón oscura
-            ctx.fillRect(-8, 15, 16, 20);
-            ctx.strokeRect(-8, 15, 16, 20);
-
-            let ventanasPiso1 = [-42, -22, 22, 42];
-            ctx.fillStyle = "#0f1c15";
-            ventanasPiso1.forEach(vX => {
-                ctx.fillRect(vX - 8, 12, 16, 16);
-                ctx.strokeRect(vX - 8, 12, 16, 16);
-                ctx.beginPath();
-                ctx.moveTo(vX, 12); ctx.lineTo(vX, 28);
-                ctx.moveTo(vX - 8, 20); ctx.lineTo(vX + 8, 20);
-                ctx.stroke();
-            });
-
-            ctx.restore();
-        }
-
-        function gestionarParticulasHumo(cabañaX, cabañaY, escala) {
-            // Coordenada exacta de salida de la chimenea calculada dinámicamente
-            let chimeneaX = cabañaX + (45 * escala);
-            let chimeneaY = cabañaY - (52 * escala);
-
-            if (humoChimenea.length < 50) {
-                humoChimenea.push({
-                    x: chimeneaX,
-                    y: chimeneaY,
-                    vx: (Math.random() - 0.5) * 0.4,
-                    vy: -(Math.random() * 0.6 + 0.4),
-                    size: Math.random() * 3 + 2,
-                    alpha: 1.0,
-                    decay: Math.random() * 0.01 + 0.005
-                });
-            }
-
+            // Luz de batería / Núcleo en el pecho
             ctx.save();
-            for (let i = humoChimenea.length - 1; i >= 0; i--) {
-                let p = humoChimenea[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.alpha -= p.decay;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00c8ff";
+            ctx.fillStyle = "rgba(0, 200, 255, " + (0.5 + Math.sin(tiempo * 0.01) * 0.5) + ")";
+            ctx.fillRect(-10, 0, 20, 10);
+            ctx.restore();
 
-                if (p.alpha <= 0) {
-                    humoChimenea.splice(i, 1);
-                    continue;
-                }
+            // 3. CUELLO Y CABEZA GIRATORIA
+            ctx.fillStyle = "#283e66";
+            ctx.fillRect(-5, -25, 10, 10); // Cuello
 
-                // Partículas verde esmeralda neón flotando hacia arriba
-                ctx.fillStyle = `rgba(42, 255, 150, ${p.alpha * 0.45})`;
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = '#2aff96';
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size * (2 - p.alpha), 0, Math.PI * 2);
-                ctx.fill();
-            }
+            // Movimiento de la cabeza de lado a lado escaneando
+            let anguloEscaneo = Math.sin(tiempo * 0.003) * 0.4;
+            ctx.translate(0, -25);
+            ctx.rotate(anguloEscaneo);
+
+            ctx.fillStyle = "#1e2e4a";
+            ctx.fillRect(-20, -14, 40, 14); // Cabeza
+            ctx.strokeRect(-20, -14, 40, 14);
+
+            // El Ojo Láser del Robot
+            ctx.save();
+            ctx.fillStyle = "#ff2a6d";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#ff2a6d";
+            ctx.beginPath();
+            ctx.arc(0, -7, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // 4. EL LÁSER VECTORIAL DE ESCANEO
+            ctx.save();
+            // Restauramos la rotación global solo para proyectar el láser hacia el suelo de forma limpia
+            ctx.restore(); 
+            
+            ctx.save();
+            ctx.globalCompositeOperation = "screen";
+            ctx.strokeStyle = "rgba(255, 42, 109, 0.4)";
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#ff2a6d";
+
+            // Calculamos el final del rayo sumando la rotación de la cabeza
+            let laserX = Math.sin(anguloEscaneo) * 160;
+            ctx.beginPath();
+            ctx.moveTo(0, -7); 
+            ctx.lineTo(laserX, 70 - bounce); 
+            ctx.stroke();
+            ctx.restore();
+
             ctx.restore();
         }
 
         function render() {
-            // Fondo oscuro con leve rastro estético
-            ctx.fillStyle = 'rgba(6, 11, 9, 0.25)';
+            ctx.fillStyle = 'rgba(5, 8, 17, 0.25)';
             ctx.fillRect(0, 0, w, h);
 
-            if (faseSistema === "INTRO") {
+            let t = Date.now();
+
+            if (fase === "INTRO") {
                 let listos = true;
                 fragmentos.forEach(p => {
                     p.x += (p.targetX - p.x) * p.velocidad;
@@ -251,9 +194,9 @@
                     ctx.save();
                     ctx.translate(p.x, p.y);
                     ctx.rotate(p.rotacion);
-                    ctx.shadowBlur = 20; ctx.shadowColor = '#2aff96';
+                    ctx.shadowBlur = 20; ctx.shadowColor = '#00c8ff';
                     ctx.fillStyle = '#ffffff';
-                    ctx.font = "bold 44px sans-serif";
+                    ctx.font = "bold 40px monospace";
                     ctx.textAlign = "center"; ctx.textBaseline = "middle";
                     ctx.fillText(p.letra, 0, 0);
                     ctx.restore();
@@ -262,44 +205,42 @@
                 });
 
                 if (listos) {
-                    faseSistema = "ESPERA_INTRO";
-                    tiempoControl = Date.now();
+                    fase = "ESPERA_INTRO";
+                    tiempoControl = t;
                 }
 
-            } else if (faseSistema === "ESPERA_INTRO") {
+            } else if (fase === "ESPERA_INTRO") {
                 ctx.save();
-                ctx.shadowBlur = 30; ctx.shadowColor = '#2aff96';
+                ctx.shadowBlur = 30; ctx.shadowColor = '#00c8ff';
                 ctx.fillStyle = '#ffffff';
-                ctx.font = "bold 44px sans-serif";
+                ctx.font = "bold 40px monospace";
                 ctx.textAlign = "center"; ctx.textBaseline = "middle";
                 ctx.fillText(textoIntro, cX, cY);
                 ctx.restore();
 
-                if (Date.now() - tiempoControl > 1500) {
-                    faseSistema = "CASA_ACTIVA";
-                    cambiarFrase();
-                    setInterval(cambiarFrase, 4000);
+                if (t - tiempoControl > 1200) {
+                    fase = "ROBOT_ACTIVO";
+                    actualizarConsola();
+                    setInterval(actualizarConsola, 3500);
                 }
 
-            } else if (faseSistema === "CASA_ACTIVA") {
-                // Dibujamos las colinas matemáticas de fondo sutiles para darle el contexto de pradera de la imagen
-                let t = Date.now() * 0.0004;
-                ctx.fillStyle = "#040806";
-                ctx.beginPath(); ctx.moveTo(0, h);
-                for(let x=0; x<=w; x+=20){
-                    ctx.lineTo(x, h*0.75 + Math.sin(x*0.005 + t)*10);
+            } else if (fase === "ROBOT_ACTIVO") {
+                // Cuadrícula sutil del radar de fondo
+                ctx.strokeStyle = "rgba(0, 200, 255, 0.03)";
+                for(let i=0; i<w; i+=50) {
+                    ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,h); ctx.stroke();
                 }
-                ctx.lineTo(w, h); ctx.fill();
 
-                // Escala adaptativa para que entre perfecto en pantallas de teléfonos móviles
-                let escalaCasa = w < 400 ? 1.8 : 2.4;
-                let casaY = h * 0.62;
+                // Dibujar suelo digital donde se apoya el Rover
+                ctx.strokeStyle = "rgba(0, 200, 255, 0.15)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(cX - 120, cY + 46);
+                ctx.lineTo(cX + 120, cY + 46);
+                ctx.stroke();
 
-                // Llamada al motor de partículas de la chimenea
-                gestionarParticulasHumo(cX, casaY, escalaCasa);
-
-                // Renderizado en tiempo real de la cabaña blanca
-                dibujarCasaRender(cX, casaY, escalaCasa);
+                // Dibujar el robot en el centro
+                dibujarRobot(cX, cY - 10, t);
             }
 
             requestAnimationFrame(render);
