@@ -3,123 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Regalo para Mamá</title>
+    <title>Regalo Premium - Mamá</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; user-select: none; }
-        body, html { width: 100%; height: 100%; background: #040206; font-family: sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
+        body, html { width: 100%; height: 100%; background: #030105; font-family: 'Courier New', Courier, monospace; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
     </style>
 </head>
 <body>
 
-    <canvas id="introCanvas"></canvas>
+    <canvas id="regaloCanvas"></canvas>
 
     <script>
-        const canvas = document.getElementById('introCanvas');
+        const canvas = document.getElementById('regaloCanvas');
         const ctx = canvas.getContext('2d');
 
-        let w = canvas.width = window.innerWidth;
-        let h = canvas.height = window.innerHeight;
-        let cX = w / 2, cY = h / 2;
+        let w, h, cX, cY;
+        let fragmentos = [];
+        const textoIntro = "BIENVENIDO";
 
-        window.addEventListener('resize', () => {
+        function resize() {
             w = canvas.width = window.innerWidth;
             h = canvas.height = window.innerHeight;
             cX = w / 2; cY = h / 2;
-        });
+        }
+        window.addEventListener('resize', resize);
+        resize();
 
-        // Configuración del texto "BIENVENIDO"
-        const textoDestino = "BIENVENIDO";
-        ctx.font = "bold 42px monospace";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+        function inicializarFragmentos() {
+            fragmentos = [];
+            // Ajustamos la fuente para que sea gigante e impactante en celular
+            ctx.font = "bold 44px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
 
-        // Medir dónde debe terminar cada letra en el centro de la pantalla
-        const anchoTexto = ctx.measureText(textoDestino).width;
-        let inicioX = cX - anchoTexto / 2;
-        
-        let fragmentos = [];
+            const anchoTotal = ctx.measureText(textoIntro).width;
+            let startX = cX - anchoTotal / 2;
 
-        // Crear los pedazos rotos dispersos por los bordes de la pantalla
-        for (let i = 0; i < textoDestino.length; i++) {
-            let letra = textoDestino[i];
-            let xDestino = inicioX + ctx.measureText(textoDestino.substring(0, i)).width + ctx.measureText(letra).width / 2;
-            let yDestino = cY;
+            for (let i = 0; i < textoIntro.length; i++) {
+                let letra = textoIntro[i];
+                let anchoLetraAnterior = ctx.measureText(textoIntro.substring(0, i)).width;
+                let anchoLetraActual = ctx.measureText(letra).width;
+                
+                // Punto exacto donde debe reconstruirse la letra en el centro
+                let targetX = startX + anchoLetraAnterior + anchoLetraActual / 2;
+                let targetY = cY;
 
-            // Ángulo aleatorio para que salgan disparados desde cualquier lado como un estallido inverso
-            let angulo = Math.random() * Math.PI * 2;
-            let distanciaFuera = Math.max(w, h) * 0.8; 
+                // Generamos la dispersión inicial masiva (fuera del teléfono como un vaso estallado)
+                let angulo = Math.random() * Math.PI * 2;
+                let radioExplosion = Math.max(w, h) * 1.2; 
 
-            fragmentos.push({
-                letra: letra,
-                // Posición inicial rota/dispersa en el espacio
-                x: cX + Math.cos(angulo) * distanciaFuera + (Math.random() * 100 - 50),
-                y: cY + Math.sin(angulo) * distanciaFuera + (Math.random() * 100 - 50),
-                // Destino final exacto
-                targetX: xDestino,
-                targetY: yDestino,
-                // Rotación del fragmento de vidrio
-                rotacion: Math.random() * Math.PI * 4,
-                targetRotacion: 0,
-                // Velocidad de atracción
-                easing: 0.04 + (Math.random() * 0.02)
-            });
+                fragmentos.push({
+                    letra: letra,
+                    // Posición de inicio rota en el espacio profundo
+                    x: cX + Math.cos(angulo) * radioExplosion + (Math.random() * 200 - 100),
+                    y: cY + Math.sin(angulo) * radioExplosion + (Math.random() * 200 - 100),
+                    targetX: targetX,
+                    targetY: targetY,
+                    // Rotación violenta inicial
+                    rotacion: Math.random() * Math.PI * 6 - Math.PI * 3,
+                    targetRotacion: 0,
+                    // Factor de atracción elástica diferencial para que no lleguen todas al mismo tiempo
+                    velocidad: 0.03 + (Math.random() * 0.025)
+                });
+            }
         }
 
-        function animar() {
-            // Fondo oscuro con un sutil rastro elegante
-            ctx.fillStyle = 'rgba(4, 2, 6, 0.2)';
+        function render() {
+            // Dejamos una estela sutil negra para el movimiento cinético
+            ctx.fillStyle = 'rgba(3, 1, 5, 0.25)';
             ctx.fillRect(0, 0, w, h);
 
-            let todosListos = true;
+            let completado = true;
 
             fragmentos.forEach(p => {
-                // Interpolación matemática lineal (atracción elástica hacia el centro)
                 let dx = p.targetX - p.x;
                 let dy = p.targetY - p.y;
-                
-                p.x += dx * p.easing;
-                p.y += dy * p.easing;
-                p.rotacion += (p.targetRotacion - p.rotacion) * p.easing;
+                let dr = p.targetRotacion - p.rotacion;
 
-                // Dibujar el fragmento con su respectiva letra y rotación de cristal
+                // Física de aproximación
+                p.x += dx * p.velocidad;
+                p.y += dy * p.velocidad;
+                p.rotacion += dr * p.velocidad;
+
                 ctx.save();
                 ctx.translate(p.x, p.y);
                 ctx.rotate(p.rotacion);
 
-                // Efecto de brillo neón dorado/rosado elegante para las letras
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = '#ff527b';
+                // Brillo de neón premium rosa/fucsia
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#ff2a6d';
                 ctx.fillStyle = '#ffffff';
-                
+                ctx.font = "bold 44px sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
                 ctx.fillText(p.letra, 0, 0);
                 ctx.restore();
 
-                // Verificar si falta mucho para que se unan por completo
-                if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
-                    todosListos = false;
+                // Si se siguen moviendo significativamente, la animación continúa
+                if (Math.abs(dx) > 0.2 || Math.abs(dy) > 0.2) {
+                    completado = false;
                 }
             });
 
-            if (!todosListos) {
-                requestAnimationFrame(animar);
+            if (!completado) {
+                requestAnimationFrame(render);
             } else {
-                // Cuando las letras ya se juntaron por completo, dejamos el texto fijo y brillante
-                ctx.fillStyle = '#040206';
+                // Bloque final fijo cuando ya se unieron los cristales
+                ctx.fillStyle = '#030105';
                 ctx.fillRect(0, 0, w, h);
                 ctx.save();
-                ctx.shadowBlur = 25;
-                ctx.shadowColor = '#ff3385';
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = '#ff2a6d';
                 ctx.fillStyle = '#ffffff';
-                ctx.fillText(textoDestino, cX, cY);
+                ctx.font = "bold 44px sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(textoIntro, cX, cY);
                 ctx.restore();
-                
-                console.log("Intro terminada. Listo para la siguiente fase.");
+
+                // AQUÍ DETENEMOS LA INTRO. 
+                console.log("Cristal unido con éxito.");
             }
         }
 
-        // Iniciar el efecto un segundo después de cargar
-        setTimeout(animar, 1000);
+        // Arranca el proceso automáticamente al cargar
+        inicializarFragmentos();
+        setTimeout(render, 800);
     </script>
 </body>
 </html>
