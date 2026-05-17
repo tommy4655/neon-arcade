@@ -3,66 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cine Code - Edición Premium</title>
+    <title>JARVIS_SYSTEM v2.0</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
-        body, html { width: 100%; height: 100%; background: #050a08; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body, html { width: 100%; height: 100%; background: #020205; font-family: 'Courier New', Courier, monospace; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         
-        /* Subtítulos estilo cine moderno */
-        .subtitulos-hud {
+        /* Interfaz holográfica superior */
+        .hud-jarvis {
             position: absolute;
-            bottom: 10%;
+            top: 5%;
             left: 50%;
             transform: translateX(-50%);
-            color: #e2e8f0;
-            font-size: 14px;
-            font-weight: 400;
-            text-align: center;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+            border-left: 3px solid #00f0ff;
+            background: rgba(2, 8, 15, 0.85);
+            padding: 10px 18px;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: bold;
             z-index: 5;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+            letter-spacing: 1px;
+            pointer-events: none;
             width: 85%;
-            max-width: 500px;
-            opacity: 0;
-            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            line-height: 1.6;
+            max-width: 320px;
         }
-        .subtitulos-hud span {
-            color: #51bda2;
-            font-family: monospace;
-            font-size: 9px;
-            display: block;
-            margin-bottom: 4px;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-        }
+        .hud-jarvis span { color: #ff3b30; }
     </style>
 </head>
 <body>
 
-    <div id="subText" class="subtitulos-hud"><span>Escena 01 // Transmisión</span>"Cargando secuencia..."</div>
-    <canvas id="movieCanvas"></canvas>
+    <div id="jarvisHUD" class="hud-jarvis">CORE_STATUS: <span id="percent">0%</span> // ENERGÍA ESTABLE</div>
+    <canvas id="ironCanvas"></canvas>
 
     <script>
-        const canvas = document.getElementById('movieCanvas');
+        const canvas = document.getElementById('ironCanvas');
         const ctx = canvas.getContext('2d');
-        const subText = document.getElementById('subText');
+        const percentText = document.getElementById('percent');
 
         let w, h, cX, cY;
-        let lluvia = [];
-        let nieblaHumo = [];
-        let destelloTormenta = 0;
-        let estadoCine = "PANEO"; // PANEO, PELICULA
-        let camY = -120;
-        let introAlpha = 1;
-
-        const lineasGuion = [
-            "Estableciendo conexión en este rincón del mundo...",
-            "Mamá: sos mi lugar seguro, mi guía y mi motor.",
-            "Buscando en los registros... No existe amor más puro que el tuyo.",
-            "Secuencia terminada. Gracias por ser la mejor todos los días."
-        ];
-        let guionIdx = 0;
+        let particulas = [];
+        let fase = "BOTEO";
+        let tControl = 0;
+        let cargaCore = 0;
 
         function resize() {
             w = canvas.width = window.innerWidth;
@@ -72,248 +55,190 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Inicializar efectos cinemáticos masivos
         function initFX() {
-            lluvia = [];
-            for(let i=0; i<110; i++) {
-                lluvia.push({ x: Math.random() * w, y: Math.random() * h, speed: Math.random() * 12 + 15, len: Math.random() * 20 + 15, opacity: Math.random() * 0.15 + 0.05 });
+            particulas = [];
+            for(let i=0; i<40; i++) {
+                particulas.push({
+                    x: cX + (Math.random() - 0.5) * 120,
+                    y: cY + (Math.random() - 0.5) * 200,
+                    vy: -(Math.random() * 2 + 1),
+                    r: Math.random() * 2 + 1,
+                    alpha: Math.random() * 0.5 + 0.5
+                });
             }
         }
 
-        function avanzarSubtitulos() {
-            subText.style.opacity = "0";
-            setTimeout(() => {
-                subText.innerHTML = `<span>Sintonía_Mamá // Registro_${guionIdx + 1}</span>"${lineasGuion[guionIdx]}"`;
-                subText.style.opacity = "1";
-                guionIdx = (guionIdx + 1) % lineasGuion.length;
-            }, 800);
-        }
-
-        // Renderizado detallado con volumen de la Cabaña de tu foto
-        function renderCasaCinematica(x, y, scale) {
+        // MOTOR GRÁFICO: CONSTRUCCIÓN DE LA ARMADURA METÁLICA
+        function dibujarArmadura(x, y, t) {
             ctx.save();
             ctx.translate(x, y);
-            ctx.scale(scale, scale);
+            
+            // Efecto de flotación magnética (Sway)
+            let flotar = Math.sin(t * 0.004) * 5;
+            ctx.translate(0, flotar);
 
-            // Sombras ambientales inferiores para que no flote en la nada
-            let shadowGrad = ctx.createRadialGradient(0, 35, 10, 0, 35, 90);
-            shadowGrad.addColorStop(0, 'rgba(2, 8, 5, 0.7)');
-            shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = shadowGrad;
-            ctx.beginPath(); ctx.ellipse(0, 35, 80, 15, 0, 0, Math.PI*2); ctx.fill();
+            // DEFINICIÓN DE DEGRADADOS METÁLICOS PREMIUM
+            // Rojo Metalizado (Armadura principal)
+            let rojoMetal = ctx.createLinearGradient(-30, 0, 30, 0);
+            rojoMetal.addColorStop(0, "#4a0004");
+            rojoMetal.addColorStop(0.3, "#99000d");
+            rojoMetal.addColorStop(0.5, "#e60012"); // Brillo central
+            rojoMetal.addColorStop(0.8, "#99000d");
+            rojoMetal.addColorStop(1, "#260002");
 
-            // 1. Base estructural de piedra (Gris con textura de profundidad)
-            ctx.fillStyle = "#333a36";
-            ctx.fillRect(-45, 20, 90, 15);
-            ctx.fillStyle = "#272d2a"; // Lado en sombra para volumen 3D
-            ctx.fillRect(5, 20, 40, 15);
+            // Dorado de Titanio (Hombros y detalles)
+            let oroMetal = ctx.createLinearGradient(-20, 0, 20, 0);
+            oroMetal.addColorStop(0, "#664d00");
+            oroMetal.addColorStop(0.4, "#cca300");
+            oroMetal.addColorStop(0.6, "#ffe680"); // Reflejo de luz pura
+            oroMetal.addColorStop(0.9, "#b38f00");
+            oroMetal.addColorStop(1, "#332600");
 
-            // 2. Paredes principales (Blanco roto con degradado de luz ambiental)
-            let wallGrad = ctx.createLinearGradient(-40, 0, 40, 0);
-            wallGrad.addColorStop(0, "#f1f5f3");
-            wallGrad.addColorStop(0.6, "#e2e8f0");
-            wallGrad.addColorStop(1, "#cbd5e1");
-            ctx.fillStyle = wallGrad;
-            ctx.fillRect(-42, -25, 84, 45);
+            // --- 1. HOMBROS Y BRAZOS ---
+            ctx.fillStyle = oroMetal;
+            // Hombro izquierdo
+            ctx.beginPath(); ctx.moveTo(-45, -55); ctx.lineTo(-25, -60); ctx.lineTo(-20, -35); ctx.lineTo(-40, -30); ctx.closePath(); ctx.fill();
+            // Hombro derecho
+            ctx.beginPath(); ctx.moveTo(45, -55); ctx.lineTo(25, -60); ctx.lineTo(20, -35); ctx.lineTo(40, -30); ctx.closePath(); ctx.fill();
 
-            // 3. Techo a dos aguas complejo (Gris oscuro texturizado)
-            ctx.fillStyle = "#1e293b";
+            ctx.fillStyle = rojoMetal;
+            // Brazos caídos laterales
+            ctx.fillRect(-44, -25, 12, 65);
+            ctx.fillRect(32, -25, 12, 65);
+
+            // --- 2. TORSO / PECHO PRINCIPAL ---
+            ctx.fillStyle = rojoMetal;
             ctx.beginPath();
-            ctx.moveTo(-48, -25);
-            ctx.lineTo(0, -55);
-            ctx.lineTo(48, -25);
+            ctx.moveTo(-25, -60);
+            ctx.lineTo(25, -60);
+            ctx.lineTo(32, -20);
+            ctx.lineTo(20, 20);
+            ctx.lineTo(-20, 20);
+            ctx.lineTo(-32, -20);
             ctx.closePath();
             ctx.fill();
-            
-            // Sombra proyectada del techo sobre la pared
-            ctx.fillStyle = "rgba(15, 23, 42, 0.25)";
+
+            // Placas doradas abdominales interconectadas
+            ctx.fillStyle = oroMetal;
+            ctx.fillRect(-15, -15, 30, 8);
+            ctx.fillRect(-12, -2, 24, 8);
+            ctx.fillRect(-14, 10, 28, 7);
+
+            // --- 3. CUELLO Y CASCO ---
+            ctx.fillStyle = rojoMetal;
+            ctx.fillRect(-8, -72, 16, 15); // Cuello base
+
+            // Casco principal (Forma curva aerodinámica)
             ctx.beginPath();
-            ctx.moveTo(-42, -25); ctx.lineTo(0, -25); ctx.lineTo(0, -15);
+            ctx.arc(0, -88, 18, 0, Math.PI * 2);
+            ctx.fill();
+            // Mandíbula/Mentón afilado
+            ctx.beginPath();
+            ctx.moveTo(-18, -88); ctx.lineTo(-12, -66); ctx.lineTo(12, -66); ctx.lineTo(18, -88);
             ctx.closePath(); ctx.fill();
 
-            // 4. Chimenea realista trasera
-            ctx.fillStyle = "#334155";
-            ctx.fillRect(25, -46, 9, 25);
-            ctx.fillStyle = "#1e293b";
-            ctx.fillRect(31, -46, 3, 25); // Relieve oscuro
+            // Placa frontal dorada del rostro (Máscara icónica)
+            ctx.fillStyle = oroMetal;
+            ctx.beginPath();
+            ctx.moveTo(-11, -96); ctx.lineTo(11, -96);
+            ctx.lineTo(13, -82); ctx.lineTo(9, -70); ctx.lineTo(-9, -70); ctx.lineTo(-13, -82);
+            ctx.closePath(); ctx.fill();
 
-            // 5. Buhardillas superiores (Las minicunas de techo de tu foto)
-            function drawDormer(bx) {
-                ctx.fillStyle = "#e2e8f0";
-                ctx.beginPath();
-                ctx.moveTo(bx - 10, -25); ctx.lineTo(bx, -40); ctx.lineTo(bx + 10, -25);
-                ctx.closePath(); ctx.fill();
-                ctx.fillStyle = "#0f172a"; // Mini ventana interior
-                ctx.fillRect(bx - 4, -32, 8, 7);
-            }
-            drawDormer(-20);
-            drawDormer(20);
-
-            // 6. Ventanas con luz cálida interna realista (Efecto brillo suave)
+            // --- 4. SISTEMAS DE LUZ (REPOSITORIO GLOW) ---
             ctx.save();
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = "rgba(254, 240, 138, 0.4)";
-            ctx.fillStyle = "#fef08a";
-            
-            let vPos = [-30, -12, 12, 30];
-            vPos.forEach(vx => {
-                // Piso superior
-                ctx.fillRect(vx - 5, -14, 10, 12);
-                // Piso inferior
-                ctx.fillRect(vx - 5, 4, 10, 12);
-            });
+            ctx.shadowBlur = 15;
+
+            // Ojos Azules Brillantes (Modo HUD activado)
+            ctx.fillStyle = "#ffffff";
+            ctx.shadowColor = "#00f0ff";
+            ctx.fillRect(-8, -86, 5, 2);
+            ctx.fillRect(3, -86, 5, 2);
+
+            // REACTOR ARC CENTRAL TRANGULAR DEL PECHO
+            if (fase === "ONLINE" || (fase === "BOTEO" && t % 40 < 25)) {
+                ctx.fillStyle = "#ffffff";
+                ctx.shadowColor = "#00f0ff";
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.moveTo(0, -48);
+                ctx.lineTo(11, -30);
+                ctx.lineTo(-11, -30);
+                ctx.closePath();
+                ctx.fill();
+            }
             ctx.restore();
-
-            // Marcos finos sobre las ventanas para dar realismo
-            ctx.strokeStyle = "#475569";
-            ctx.lineWidth = 0.5;
-            vPos.forEach(vx => {
-                ctx.strokeRect(vx - 5, -14, 10, 12);
-                ctx.strokeRect(vx - 5, 4, 10, 12);
-            });
-
-            // Puerta principal central
-            ctx.fillStyle = "#0f172a";
-            ctx.fillRect(-6, 4, 12, 16);
 
             ctx.restore();
         }
 
-            // ACTOR: EL ROBOT EXPLORADOR CINEMÁTICO
-            function renderRobotCine(x, y, t) {
-                ctx.save();
-                ctx.translate(x, y);
+        function gestionarParticulas(t) {
+            ctx.save();
+            ctx.globalCompositeOperation = "screen";
+            for (let i = particulas.length - 1; i >= 0; i--) {
+                let p = particulas[i];
+                p.y += p.vy;
+                p.alpha -= 0.01;
 
-                let swing = Math.sin(t * 0.005) * 1.5;
-                ctx.translate(0, swing);
+                if (p.alpha <= 0) {
+                    p.y = cY + 110;
+                    p.x = cX + (Math.random() - 0.5) * 60;
+                    p.alpha = 1;
+                }
 
-                // Orugas y chasis detallado
-                ctx.fillStyle = "#0f172a";
-                ctx.fillRect(-20, 14, 40, 8);
-                
-                ctx.fillStyle = "#334155"; // Cuerpo metalizado
-                ctx.fillRect(-14, -6, 28, 20);
-                ctx.strokeStyle = "#475569";
-                ctx.strokeRect(-14, -6, 28, 20);
-
-                // Cabeza y visor óptico neón
-                ctx.fillStyle = "#1e293b";
-                ctx.fillRect(-6, -14, 12, 8);
-
-                // Foco/Láser cinemático proyectado en el ambiente (Screen blend)
-                let scanAngle = Math.sin(t * 0.002) * 0.6;
-                ctx.save();
-                ctx.globalCompositeOperation = "screen";
-                let laserGrad = ctx.createRadialGradient(0, -10, 5, Math.sin(scanAngle)*80, 40, 120);
-                laserGrad.addColorStop(0, "rgba(255, 42, 109, 0.75)");
-                laserGrad.addColorStop(0.3, "rgba(255, 42, 109, 0.15)");
-                laserGrad.addColorStop(1, "rgba(0,0,0,0)");
-                ctx.fillStyle = laserGrad;
-                
+                ctx.fillStyle = `rgba(0, 240, 255, ${p.alpha})`;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#00f0ff";
                 ctx.beginPath();
-                ctx.moveTo(0, -10);
-                ctx.lineTo(Math.sin(scanAngle)*80 - 40, 60);
-                ctx.lineTo(Math.sin(scanAngle)*80 + 40, 60);
-                ctx.closePath();
+                ctx.arc(p.x, p.y + Math.sin(t*0.004)*5, p.r, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.restore();
-
-                // Punto luminoso del lente
-                ctx.fillStyle = "#ff2a6d";
-                ctx.beginPath(); ctx.arc(0, -10, 3, 0, Math.PI*2); ctx.fill();
-
-                ctx.restore();
             }
+            ctx.restore();
+        }
 
         function render() {
-            // Fondo cinematográfico: Niebla oscura y tormentosa
-            let skyGrad = ctx.createLinearGradient(0, 0, 0, h);
-            skyGrad.addColorStop(0, "#030706");
-            skyGrad.addColorStop(0.5, "#08110d");
-            skyGrad.addColorStop(1, "#0f1f18");
-            ctx.fillStyle = skyGrad;
+            // Fondo oscuro puro con estela tecnológica baja
+            ctx.fillStyle = "rgba(2, 2, 5, 0.15)";
             ctx.fillRect(0, 0, w, h);
 
             let time = Date.now();
 
-            // Animación suave de la cámara al iniciar (Traveling vertical)
-            if (estadoCine === "PANEO") {
-                camY += (0 - camY) * 0.03;
-                if (Math.abs(0 - camY) < 0.5) {
-                    estadoCine = "PELICULA";
-                    avanzarSubtitulos();
-                    setInterval(avanzarSubtitulos, 5000);
-                }
-            }
-
-            // FX Tormenta: Relámpagos atmosféricos esporádicos
-            if (Math.random() < 0.004) destelloTormenta = 0.4;
-            if (destelloTormenta > 0) {
-                ctx.fillStyle = `rgba(167, 243, 208, ${destelloTormenta})`;
-                ctx.fillRect(0, 0, w, h);
-                destelloTormenta -= 0.04;
-            }
-
-            // 1. DIBUJO DE COLINAS CON PROFUNDIDAD DE CAMPO
-            // Colina de fondo brumosa (Perspectiva aérea)
-            ctx.fillStyle = "#07120e";
-            ctx.beginPath(); ctx.moveTo(0, h);
-            for(let x=0; x<=w; x+=30) {
-                ctx.lineTo(x, (h * 0.55) + camY + Math.sin(x*0.003 + time*0.0002)*12);
-            }
-            ctx.lineTo(w, h); ctx.fill();
-
-            // Colina principal donde descansa la cabaña
-            ctx.fillStyle = "#0c1f17";
-            ctx.beginPath(); ctx.moveTo(0, h);
-            for(let x=0; x<=w; x+=20) {
-                ctx.lineTo(x, (h * 0.68) + camY + Math.sin(x*0.005 + time*0.0004)*8);
-            }
-            ctx.lineTo(w, h); ctx.fill();
-
-            // 2. RENDER DE LOS OBJETOS CINEMÁTICOS
-            let houseY = (h * 0.58) + camY + Math.sin(cX*0.005 + time*0.0004)*8;
-            renderCasaCinematica(cX, houseY, w < 450 ? 1.4 : 1.9);
-
-            // Humo volumétrico cinemático (Partículas difuminadas y suaves, no círculos sólidos)
-            if (time % 5 === 0) {
-                let hScale = w < 450 ? 1.4 : 1.9;
-                nieblaHumo.push({ x: cX + (28 * hScale), y: houseY - (46 * hScale), size: 4, alpha: 0.6 });
-            }
-            
-            nieblaHumo.forEach((p, idx) => {
-                p.y -= 0.6;
-                p.x += Math.sin(p.y * 0.02) * 0.3;
-                p.alpha -= 0.006;
-                p.size += 0.2;
-
-                if (p.alpha <= 0) {
-                    nieblaHumo.splice(idx, 1);
+            if (fase === "BOTEO") {
+                // Simulación de carga del sistema Jarvis
+                if (cargaCore < 100) {
+                    cargaCore += 0.8;
+                    percentText.innerText = `${Math.floor(cargaCore)}%`;
                 } else {
-                    ctx.save();
-                    let cloudGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-                    cloudGrad.addColorStop(0, `rgba(16, 185, 129, ${p.alpha * 0.25})`);
-                    cloudGrad.addColorStop(1, "rgba(0,0,0,0)");
-                    ctx.fillStyle = cloudGrad;
-                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-                    ctx.restore();
+                    fase = "ONLINE";
+                    document.getElementById('jarvisHUD').innerHTML = "SYSTEM: <span>ONLINE</span> // ACCESO CONCEDIDO";
                 }
-            });
 
-            // 3. ACTOR ROBOT EN EL FRENTE DE LA ESCENA
-            if (estadoCine === "PELICULA") {
-                renderRobotCine(cX - 65, (h * 0.78) + camY, time);
+                // Parpadeo de arranque: Solo se ven los ojos y el reactor cargando energía
+                ctx.save();
+                ctx.translate(cX, cY - 20);
+                ctx.shadowBlur = 20; ctx.shadowColor = "#00f0ff";
+                ctx.fillStyle = "#ffffff";
+                // Ojos
+                ctx.fillRect(-8, -86, 5, 2); ctx.fillRect(3, -86, 5, 2);
+                // Reactor inestable
+                if (Math.random() > 0.3) {
+                    ctx.beginPath(); ctx.moveTo(0, -48); ctx.lineTo(10, -30); ctx.lineTo(-10, -30); ctx.closePath(); ctx.fill();
+                }
+                ctx.restore();
+
+            } else if (fase === "ONLINE") {
+                // Dibujar la cuadrícula holográfica de fondo (Interfaz táctica de Stark)
+                ctx.strokeStyle = "rgba(0, 240, 255, 0.02)";
+                ctx.lineWidth = 1;
+                for(let i = 0; i < w; i += 40) {
+                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
+                }
+
+                // Generar las partículas repulsoras de los propulsores inferiores
+                gestionarParticulas(time);
+
+                // Dibujar el modelo completo con brillos metálicos avanzados
+                dibujarArmadura(cX, cY - 20, time);
             }
-
-            // 4. FX CAPA SUPERIOR: EFECTO DE LLUVIA DIRECCIONAL CINEMÁTICA
-            ctx.lineWidth = 1;
-            lluvia.forEach(r => {
-                r.y += r.speed;
-                r.x -= r.speed * 0.1; // Caída diagonal por el viento simulado
-                if (r.y > h) { r.y = -20; r.x = Math.random() * w; }
-                ctx.strokeStyle = `rgba(209, 250, 229, ${r.opacity})`;
-                ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x - r.len*0.1, r.y + r.len); ctx.stroke();
-            });
 
             requestAnimationFrame(render);
         }
@@ -322,4 +247,4 @@
         render();
     </script>
 </body>
-</html>
+    </html>
